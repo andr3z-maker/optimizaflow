@@ -333,22 +333,25 @@ async function doRegister(){
   if(pass!==pass2){err.textContent="Las contraseñas no coinciden.";err.style.display="block";return;}
   const btn=document.getElementById("btnRegister");
   btn.textContent="Enviando…";btn.disabled=true;
-  try{const d=await jsonpGet();if(d&&d.nextId!==undefined)allData=d;}catch(e){}
+  // Cargar datos frescos del Sheet
+  try{const d=await jsonpCall("&action=load");if(d&&d.nextId!==undefined)allData=d;}catch(e){}
   if((allData.usuarios||[]).find(u=>u.email===email)){
     err.textContent="Ya existe una cuenta con ese email.";err.style.display="block";
     btn.textContent="Solicitar acceso";btn.disabled=false;return;
   }
   const hash=await hashPass(pass);
   const nuevo={id:"u_"+Date.now(),nombre,email,equipo,password:hash,estado:"pendiente",fechaRegistro:new Date().toISOString()};
-  allData.usuarios=[...(allData.usuarios||[]),nuevo];
+  // Agregar usuario y guardar inmediatamente — sin esperar ningún refresh
+  const usuariosActualizados=[...(allData.usuarios||[]),nuevo];
+  const meta={usuarios:usuariosActualizados,nextId:allData.nextId||1};
   try{
-    await saveMeta();
+    await jsonpCall("&action=savemeta&data="+encodeURIComponent(JSON.stringify(meta)));
+    allData.usuarios=usuariosActualizados;
     document.getElementById("panelRegister").style.display="none";
     document.getElementById("panelPending").style.display="block";
     document.getElementById("tabRegister").className="auth-tab";
   }catch(e){
     err.textContent="Error al registrarse. Intentá de nuevo.";err.style.display="block";
-    allData.usuarios.pop();
   }
   btn.textContent="Solicitar acceso";btn.disabled=false;
 }
