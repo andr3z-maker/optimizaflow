@@ -256,7 +256,7 @@ const PRIOS={alta:{color:"#ef4444"},media:{color:"#f59e0b"},baja:{color:"#10b981
 let allData={solicitudes:[],usuarios:[],nextId:1};
 let currentUser=null, prioSelected="alta";
 
-function jsonpGet(extra=""){
+function jsonpCall(extra=""){
   return new Promise((res,rej)=>{
     const cb="cb_"+Date.now(),sc=document.createElement("script");
     window[cb]=d=>{delete window[cb];sc.remove();res(d);};
@@ -265,12 +265,20 @@ function jsonpGet(extra=""){
     document.head.appendChild(sc);
   });
 }
-function jsonpSave(d){
-  const sinArchivos = {
-    ...d,
-    solicitudes: (d.solicitudes||[]).map(s => ({...s, adjuntos:[]}))
-  };
-  return jsonpGet("&action=save&data="+encodeURIComponent(JSON.stringify(sinArchivos)));
+function jsonpGet(){ return jsonpCall(); }
+
+// Guarda meta (usuarios + nextId)
+function saveMeta(){
+  const meta={usuarios:allData.usuarios||[],nextId:allData.nextId||1};
+  return jsonpCall("&action=savemeta&data="+encodeURIComponent(JSON.stringify(meta)));
+}
+// Guarda o actualiza una solicitud individual
+function saveSol(sol){
+  return jsonpCall("&action=savesol&id="+sol.id+"&data="+encodeURIComponent(JSON.stringify(sol)));
+}
+// Elimina una solicitud
+function deleteSol(id){
+  return jsonpCall("&action=deletesol&id="+id);
 }
 
 
@@ -334,7 +342,7 @@ async function doRegister(){
   const nuevo={id:"u_"+Date.now(),nombre,email,equipo,password:hash,estado:"pendiente",fechaRegistro:new Date().toISOString()};
   allData.usuarios=[...(allData.usuarios||[]),nuevo];
   try{
-    await jsonpSave(allData);
+    await saveMeta();
     document.getElementById("panelRegister").style.display="none";
     document.getElementById("panelPending").style.display="block";
     document.getElementById("tabRegister").className="auth-tab";
@@ -371,7 +379,7 @@ function loadData(){
       }
       delete window[cb];sc.remove();renderStats();renderCards();res();
     };
-    sc.src=API+"?callback="+cb+"&t="+Date.now();
+    sc.src=API+"?callback="+cb+"&action=load&t="+Date.now();
     sc.onerror=()=>{delete window[cb];sc.remove();renderStats();renderCards();res();};
     document.head.appendChild(sc);
   });
@@ -479,7 +487,9 @@ async function enviarSolicitud(){
   allData.solicitudes=[...(allData.solicitudes||[]),nueva];
   allData.nextId=solId+1;
   try{
-    await jsonpSave(allData);
+    await saveSol(nueva);
+    allData.nextId=solId+1;
+    await saveMeta();
     cerrarModal();showToast("✅ Solicitud enviada correctamente","ok");
     renderStats();renderCards();
   }catch(e){

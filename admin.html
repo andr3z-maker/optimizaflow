@@ -200,7 +200,7 @@ let allData={solicitudes:[],usuarios:[],nextId:1};
 let vistaKanban=true, currentSection="solicitudes", modalSol=null, modalEstado="", modalPrio="";
 const gradAdmin="linear-gradient(135deg,#ef4444,#f59e0b)";
 
-function jsonpGet(extra=""){
+function jsonpCall(extra=""){
   return new Promise((res,rej)=>{
     const cb="cb_"+Date.now(),sc=document.createElement("script");
     window[cb]=d=>{delete window[cb];sc.remove();res(d);};
@@ -209,19 +209,24 @@ function jsonpGet(extra=""){
     document.head.appendChild(sc);
   });
 }
-function jsonpSave(d){
-  const sinArchivos={
-    ...d,
-    solicitudes:(d.solicitudes||[]).map(s=>({...s,adjuntos:[]}))
-  };
-  return jsonpGet("&action=save&data="+encodeURIComponent(JSON.stringify(sinArchivos)));
+
+function saveMeta(){
+  const meta={usuarios:allData.usuarios||[],nextId:allData.nextId||1};
+  return jsonpCall("&action=savemeta&data="+encodeURIComponent(JSON.stringify(meta)));
+}
+function saveSol(sol){
+  return jsonpCall("&action=savesol&id="+sol.id+"&data="+encodeURIComponent(JSON.stringify(sol)));
+}
+function deleteSol(id){
+  return jsonpCall("&action=deletesol&id="+id);
 }
 
-async function saveData(){
+async function saveData(solModificada){
   const ind=document.getElementById("saveIndicator");
   ind.textContent="⏳ Guardando…";ind.style.color="#f59e0b";ind.style.display="inline";
   try{
-    await jsonpSave(allData);
+    if(solModificada) await saveSol(solModificada);
+    await saveMeta();
     ind.textContent="✓ Guardado";ind.style.color="#10b981";
     setTimeout(()=>ind.style.display="none",2000);
   }catch{ind.textContent="⚠️ Error";ind.style.color="#ef4444";}
@@ -239,7 +244,7 @@ function loadData(){
       updatePendingBadge();
       res();
     };
-    sc.src=API+"?callback="+cb+"&t="+Date.now();
+    sc.src=API+"?callback="+cb+"&action=load&t="+Date.now();
     sc.onerror=()=>{delete window[cb];sc.remove();renderStats();res();};
     document.head.appendChild(sc);
   });
@@ -308,7 +313,7 @@ function userCardHTML(u,estado){
 async function cambiarEstadoUser(uid,nuevoEstado){
   allData.usuarios=(allData.usuarios||[]).map(u=>u.id===uid?{...u,estado:nuevoEstado}:u);
   renderUsers();updatePendingBadge();
-  await saveData();
+  await saveData(null);
   const msg={aprobado:"✓ Usuario aprobado",rechazado:"Usuario rechazado"}[nuevoEstado]||"Actualizado";
   showToast(msg,nuevoEstado==="aprobado"?"ok":"err");
 }
@@ -493,20 +498,23 @@ function renderAdminModal(){
 }
 async function guardarAdmin(){
   const comentario=document.getElementById("nuevoComentario").value.trim();
+  let solModificada=null;
   allData.solicitudes=(allData.solicitudes||[]).map(s=>{
     if(s.id!==modalSol.id)return s;
     const u={...s,estado:modalEstado,prioridad:modalPrio,equipo:document.getElementById('adminEquipo').value};
     if(comentario)u.comentarios=[...(s.comentarios||[]),{texto:comentario,fecha:new Date().toISOString()}];
+    solModificada=u;
     return u;
   });
   document.getElementById("adminOverlay").style.display="none";
-  await saveData();renderStats();renderContent();
+  await saveData(solModificada);renderStats();renderContent();
   showToast("✅ Cambios guardados","ok");
 }
 async function eliminar(id){
   if(!confirm("¿Eliminar esta solicitud?"))return;
   allData.solicitudes=(allData.solicitudes||[]).filter(s=>s.id!==id);
-  await saveData();renderStats();renderContent();
+  await deleteSol(id);
+  renderStats();renderContent();
   showToast("🗑 Solicitud eliminada","ok");
 }
 function showToast(msg,type){
@@ -556,7 +564,7 @@ async function guardarSector(){
   const nuevoSector=document.getElementById("sectorSelect").value;
   allData.usuarios=(allData.usuarios||[]).map(u=>u.id===sectorUserId?{...u,equipo:nuevoSector}:u);
   renderUsers();
-  await saveData();
+  await saveData(null);
   showToast("✓ Sector actualizado","ok");
   cerrarSectorModal();
 }
