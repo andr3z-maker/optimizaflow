@@ -184,6 +184,7 @@ select.inp-sm{background:#0d1117;border:1px solid #1e293b;border-radius:8px;padd
         <option value="desarrollo">En Desarrollo</option>
         <option value="prueba">En Prueba</option>
         <option value="produccion">En Producción</option>
+        <option value="rechazado">Rechazado</option>
       </select>
       <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#475569;cursor:pointer">
         <input type="checkbox" id="soloMias" onchange="renderCards()"/> Solo mis solicitudes
@@ -249,6 +250,7 @@ const STAGES=[
   {id:"desarrollo",label:"En Desarrollo", color:"#f59e0b",bg:"rgba(245,158,11,0.10)"},
   {id:"prueba",    label:"En Prueba",      color:"#6366f1",bg:"rgba(99,102,241,0.10)"},
   {id:"produccion",label:"En Producción", color:"#10b981",bg:"rgba(16,185,129,0.10)"},
+  {id:"rechazado", label:"Rechazado",      color:"#ef4444",bg:"rgba(239,68,68,0.10)"},
 ];
 const PRIOS={alta:{color:"#ef4444"},media:{color:"#f59e0b"},baja:{color:"#10b981"}};
 let allData={solicitudes:[],usuarios:[],nextId:1};
