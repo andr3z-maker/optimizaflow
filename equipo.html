@@ -385,7 +385,8 @@ function badgeEstado(id){
 }
 
 function renderStats(){
-  const sol=allData.solicitudes||[];
+  const sol=(allData.solicitudes||[])
+    .filter(s=>s.equipo===currentUser?.equipo||s.solicitanteId===currentUser?.id);
   document.getElementById("statsBar").innerHTML=STAGES.map(s=>{
     const c=sol.filter(x=>x.estado===s.id).length;
     return `<div style="display:flex;align-items:center;gap:8px"><div style="width:8px;height:8px;border-radius:50%;background:${s.color}"></div><span style="font-size:12px;color:#334155">${s.label}</span><span style="font-size:15px;font-weight:800;color:${s.color}">${c}</span></div>`;
@@ -397,6 +398,7 @@ function renderCards(){
   const est=document.getElementById("filtroEstado").value;
   const soloMias=document.getElementById("soloMias").checked;
   let sol=(allData.solicitudes||[])
+    .filter(s=>s.equipo===currentUser?.equipo||s.solicitanteId===currentUser?.id)
     .filter(s=>est==="todos"||s.estado===est)
     .filter(s=>!soloMias||s.solicitanteId===currentUser?.id)
     .sort((a,b)=>new Date(b.fechaCreacion)-new Date(a.fechaCreacion));
