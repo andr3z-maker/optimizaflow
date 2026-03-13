@@ -212,14 +212,7 @@ function jsonpSave(d){
     ...d,
     solicitudes:(d.solicitudes||[]).map(s=>({...s,adjuntos:[]}))
   };
-  return fetch(API, {
-    method:"POST",
-    mode:"cors",
-    headers:{"Content-Type":"text/plain"},
-    body:JSON.stringify({action:"save", data:JSON.stringify(sinArchivos)})
-  }).then(r=>r.text()).then(t=>JSON.parse(t)).catch(()=>
-    jsonpGet("&action=save&data="+encodeURIComponent(JSON.stringify(sinArchivos)))
-  );
+  return jsonpGet("&action=save&data="+encodeURIComponent(JSON.stringify(sinArchivos)));
 }
 function jsonpGetFiles(id){
   return jsonpGet("&action=getfiles&id="+id);

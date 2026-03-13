@@ -272,32 +272,22 @@ function jsonpSave(d){
     ...d,
     solicitudes: (d.solicitudes||[]).map(s => ({...s, adjuntos:[]}))
   };
-  // Intentar fetch POST primero (funciona en https), fallback a JSONP
-  return fetch(API, {
-    method:"POST",
-    mode:"cors",
-    headers:{"Content-Type":"text/plain"},
-    body:JSON.stringify({action:"save", data:JSON.stringify(sinArchivos)})
-  }).then(r=>r.text()).then(t=>JSON.parse(t)).catch(()=>
-    jsonpGet("&action=save&data="+encodeURIComponent(JSON.stringify(sinArchivos)))
-  );
+  return jsonpGet("&action=save&data="+encodeURIComponent(JSON.stringify(sinArchivos)));
 }
 async function subirArchivoDrive(archivo){
-  const res = await fetch(API, {
-    method: "POST",
-    mode: "cors",
-    headers: {"Content-Type": "text/plain"},
-    body: JSON.stringify({
-      action: "uploadfile",
-      name: archivo.name,
-      mimeType: archivo.type,
-      data: archivo.data
-    })
+  // Subir a Cloudinary (acepta CORS sin OAuth)
+  const CLOUD_NAME = "optimizaflow";
+  const UPLOAD_PRESET = "of_adjuntos";
+  const fd = new FormData();
+  fd.append("file", archivo.data);
+  fd.append("upload_preset", UPLOAD_PRESET);
+  fd.append("public_id", "sol_"+Date.now()+"_"+archivo.name.replace(/[^a-zA-Z0-9.]/g,"_"));
+  const res = await fetch("https://api.cloudinary.com/v1_1/"+CLOUD_NAME+"/auto/upload", {
+    method:"POST", body:fd
   });
-  const txt = await res.text();
-  const json = JSON.parse(txt);
-  if(!json.ok) throw new Error(json.error || "Upload failed");
-  return {name: json.name, driveId: json.driveId, url: json.url};
+  const json = await res.json();
+  if(!json.secure_url) throw new Error(json.error?.message || "Upload failed");
+  return {name:archivo.name, url:json.secure_url};
 }
 async function jsonpSaveFiles(solId, archivos){
   if(!archivos||!archivos.length) return [];
