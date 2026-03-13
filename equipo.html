@@ -268,12 +268,18 @@ function jsonpGet(extra=""){
   });
 }
 function jsonpSave(d){
-  // Guardar sin archivos (los archivos van separados)
   const sinArchivos = {
     ...d,
-    solicitudes: (d.solicitudes||[]).map(s => ({...s, adjuntos: s.adjuntos?.length ? [{count: s.adjuntos.length}] : []}))
+    solicitudes: (d.solicitudes||[]).map(s => ({...s, adjuntos:[]}))
   };
-  return jsonpGet("&action=save&data="+encodeURIComponent(JSON.stringify(sinArchivos)));
+  // Intentar fetch POST primero (funciona en https), fallback a JSONP
+  return fetch(API, {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({action:"save", data:JSON.stringify(sinArchivos)})
+  }).then(r=>r.json()).catch(()=>
+    jsonpGet("&action=save&data="+encodeURIComponent(JSON.stringify(sinArchivos)))
+  );
 }
 async function subirArchivoDrive(archivo){
   const res = await fetch(API, {
