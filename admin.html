@@ -214,9 +214,10 @@ function jsonpSave(d){
   };
   return fetch(API, {
     method:"POST",
-    headers:{"Content-Type":"application/json"},
+    mode:"cors",
+    headers:{"Content-Type":"text/plain"},
     body:JSON.stringify({action:"save", data:JSON.stringify(sinArchivos)})
-  }).then(r=>r.json()).catch(()=>
+  }).then(r=>r.text()).then(t=>JSON.parse(t)).catch(()=>
     jsonpGet("&action=save&data="+encodeURIComponent(JSON.stringify(sinArchivos)))
   );
 }

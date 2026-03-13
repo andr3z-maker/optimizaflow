@@ -275,16 +275,18 @@ function jsonpSave(d){
   // Intentar fetch POST primero (funciona en https), fallback a JSONP
   return fetch(API, {
     method:"POST",
-    headers:{"Content-Type":"application/json"},
+    mode:"cors",
+    headers:{"Content-Type":"text/plain"},
     body:JSON.stringify({action:"save", data:JSON.stringify(sinArchivos)})
-  }).then(r=>r.json()).catch(()=>
+  }).then(r=>r.text()).then(t=>JSON.parse(t)).catch(()=>
     jsonpGet("&action=save&data="+encodeURIComponent(JSON.stringify(sinArchivos)))
   );
 }
 async function subirArchivoDrive(archivo){
   const res = await fetch(API, {
     method: "POST",
-    headers: {"Content-Type": "application/json"},
+    mode: "cors",
+    headers: {"Content-Type": "text/plain"},
     body: JSON.stringify({
       action: "uploadfile",
       name: archivo.name,
@@ -292,7 +294,8 @@ async function subirArchivoDrive(archivo){
       data: archivo.data
     })
   });
-  const json = await res.json();
+  const txt = await res.text();
+  const json = JSON.parse(txt);
   if(!json.ok) throw new Error(json.error || "Upload failed");
   return {name: json.name, driveId: json.driveId, url: json.url};
 }
