@@ -185,8 +185,6 @@ input.inp-sm::placeholder{color:#334155}
 
 <script>
 const API="https://script.google.com/macros/s/AKfycby6xK8H6ESoruYOfevHRb7gux4fRbbm1AMsP8PzDKD_mQdiPYLfjEPJ4UIP86f2-hN3/exec";
-const DRIVE_KEY="AIzaSyBO1fBGosYA8BJoHCWy6_SNIVW4nUpRx-4";
-const DRIVE_FOLDER="1SJFZt4A7kIEzWLTlQpKjgozxfj5i19WC";
 const STAGES=[
   {id:"pendiente", label:"Pendiente",     color:"#94a3b8",bg:"rgba(148,163,184,0.10)"},
   {id:"desarrollo",label:"En Desarrollo", color:"#f59e0b",bg:"rgba(245,158,11,0.10)"},
@@ -213,9 +211,6 @@ function jsonpSave(d){
     solicitudes:(d.solicitudes||[]).map(s=>({...s,adjuntos:[]}))
   };
   return jsonpGet("&action=save&data="+encodeURIComponent(JSON.stringify(sinArchivos)));
-}
-function jsonpGetFiles(id){
-  return jsonpGet("&action=getfiles&id="+id);
 }
 
 async function saveData(){
@@ -387,7 +382,6 @@ function cardHTML(s){
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
       ${badgeEstado(s.estado)}
       <div style="display:flex;align-items:center;gap:6px">
-        ${s.tieneAdjuntos?`<span style="font-size:11px;color:#334155">📎</span>`:""}
         ${s.comentarios?.length?`<span style="font-size:11px;color:#6366f1">💬${s.comentarios.length}</span>`:""}
         <span style="font-size:11px;color:#334155">📅${fecha}</span>
         <button class="btn-gestionar" onclick="abrirAdmin(${s.id})">Gestionar</button>
@@ -430,21 +424,11 @@ function renderLista(sol){
 }
 
 // ── Modal admin ──────────────────────────────────────────────────────────────
-let modalAdjuntos=[];
 async function abrirAdmin(id){
   modalSol=(allData.solicitudes||[]).find(s=>s.id===id);if(!modalSol)return;
   modalEstado=modalSol.estado;modalPrio=modalSol.prioridad;
-  modalAdjuntos=[];
   renderAdminModal();
   document.getElementById("adminOverlay").style.display="flex";
-  // Cargar archivos si los tiene
-  if(modalSol.tieneAdjuntos){
-    try{
-      const arch=await jsonpGetFiles(id);
-      modalAdjuntos=Array.isArray(arch)?arch:[];
-      renderAdminModal(); // re-render con archivos
-    }catch(e){}
-  }
 }
 function renderAdminModal(){
   const s=modalSol;
@@ -459,7 +443,6 @@ function renderAdminModal(){
       <button style="background:none;border:none;color:#475569;cursor:pointer;font-size:22px" onclick="document.getElementById('adminOverlay').style.display='none'">✕</button>
     </div>
     ${s.descripcion?`<div style="background:#080e19;border:1px solid #0f172a;border-radius:8px;padding:12px 14px;margin-bottom:20px;font-size:13px;color:#64748b;line-height:1.6">${s.descripcion}</div>`:""}
-    ${modalAdjuntos.length?`<div style="margin-bottom:20px"><label class="lbl">Archivos adjuntos</label><div style="display:flex;flex-direction:column;gap:6px">${modalAdjuntos.map(f=>`<a href="${f.url||f.data||'#'}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:8px;background:#0f172a;border:1px solid #1e293b;border-radius:7px;padding:8px 12px;color:#6366f1;text-decoration:none;font-size:12px">📄 ${f.name}<span style="margin-left:auto;font-size:10px;color:#334155">Ver en Drive ↗</span></a>`).join("")}</div></div>`:s.tieneAdjuntos?`<div style="margin-bottom:20px;font-size:12px;color:#334155">📎 Cargando archivos…</div>`:""}
     <div style="display:flex;flex-direction:column;gap:20px">
       <div><label class="lbl">Cambiar estado</label>
         <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px" id="stageGrid"></div></div>
