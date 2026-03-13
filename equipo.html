@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>OptimizaFlow — Portal del Equipo</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{min-height:100vh;background:#060b14;font-family:'Sora',sans-serif;color:#e2e8f0}
+.auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
+  background:radial-gradient(ellipse at 60% 20%,#0f172a 0%,#060b14 70%)}
+.auth-box{background:#0d1117;border:1px solid #1e293b;border-radius:20px;width:100%;max-width:420px;padding:40px 36px}
+.auth-logo{display:flex;align-items:center;gap:12px;margin-bottom:32px;justify-content:center}
+.auth-logo-icon{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#6366f1,#8b5cf6);
+  display:flex;align-items:center;justify-content:center;font-size:20px}
+.auth-title{font-size:22px;font-weight:800;background:linear-gradient(90deg,#f1f5f9,#94a3b8);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.auth-sub{font-size:12px;color:#334155;text-align:center;margin-top:-24px;margin-bottom:28px;letter-spacing:.05em}
+.auth-tabs{display:flex;background:#080e19;border-radius:10px;padding:4px;gap:4px;margin-bottom:28px}
+.auth-tab{flex:1;padding:9px;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:700;
+  font-family:inherit;transition:all .2s;background:transparent;color:#475569}
+.auth-tab.active{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white}
+.header{border-bottom:1px solid #0f172a;padding:0 28px;background:#080e19;position:sticky;top:0;z-index:100}
+.header-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:62px}
+.logo-icon{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#6366f1,#8b5cf6);
+  display:flex;align-items:center;justify-content:center;font-size:16px}
+.logo-title{font-size:16px;font-weight:800;background:linear-gradient(90deg,#f1f5f9,#94a3b8);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.logo-sub{font-size:10px;color:#1e293b;letter-spacing:.08em;margin-top:-2px}
+.user-chip{display:flex;align-items:center;gap:8px;background:#0f172a;border:1px solid #1e293b;
+  border-radius:20px;padding:5px 14px 5px 5px}
+.user-avatar{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white}
+.stats-bar{border-bottom:1px solid #0a1020;padding:0 28px;background:#080e19}
+.stats-inner{max-width:1100px;margin:0 auto;display:flex;gap:28px;padding:12px 0;flex-wrap:wrap;align-items:center}
+.filter-bar{padding:13px 28px;border-bottom:1px solid #0a1020}
+.filter-inner{max-width:1100px;margin:0 auto;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;padding:24px 28px;
+  max-width:1100px;margin:0 auto}
+.card{background:#0d1117;border:1px solid #1e293b;border-radius:10px;padding:16px 18px;cursor:pointer;transition:all .18s}
+.card:hover{transform:translateY(-1px)}
+.badge-prioridad{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;
+  letter-spacing:.05em;text-transform:uppercase;padding:3px 10px;border-radius:20px}
+.badge-estado{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 12px;border-radius:4px}
+.btn-primary{padding:10px 20px;border-radius:8px;border:none;background:linear-gradient(135deg,#6366f1,#8b5cf6);
+  color:white;cursor:pointer;font-size:14px;font-weight:700;font-family:inherit;width:100%}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-outline{padding:10px 20px;border-radius:8px;border:1px solid #1e293b;background:transparent;
+  color:#94a3b8;cursor:pointer;font-size:14px;font-weight:600;font-family:inherit}
+.btn-sm{padding:8px 18px;border-radius:8px;border:none;background:linear-gradient(135deg,#6366f1,#8b5cf6);
+  color:white;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit;display:inline-flex;align-items:center;gap:6px}
+.btn-ghost{background:none;border:1px solid #1e293b;border-radius:8px;color:#475569;cursor:pointer;
+  padding:6px 12px;font-size:12px;font-family:inherit}
+.btn-link{background:none;border:none;color:#6366f1;cursor:pointer;font-size:13px;font-family:inherit;text-decoration:underline;padding:0}
+label.lbl{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#64748b;margin-bottom:6px;display:block}
+.inp{width:100%;background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:10px 14px;
+  color:#e2e8f0;font-size:14px;outline:none;font-family:inherit}
+.inp:focus{border-color:#6366f1}
+textarea.inp{min-height:90px;resize:vertical}
+select.inp-sm{background:#0d1117;border:1px solid #1e293b;border-radius:8px;padding:7px 12px;
+  color:#94a3b8;font-size:12px;cursor:pointer;outline:none;font-family:inherit}
+.prio-btn{flex:1;padding:9px 0;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px;
+  font-family:inherit;transition:all .15s;border:2px solid #1e293b;background:transparent;color:#475569}
+.prio-btn.active-alta{border-color:#ef4444;background:#ef444418;color:#ef4444}
+.prio-btn.active-media{border-color:#f59e0b;background:#f59e0b18;color:#f59e0b}
+.prio-btn.active-baja{border-color:#10b981;background:#10b98118;color:#10b981}
+.err-box{color:#ef4444;font-size:13px;background:#ef444412;border:1px solid #ef444430;border-radius:7px;padding:9px 14px;display:none}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);display:flex;align-items:center;
+  justify-content:center;z-index:1000;backdrop-filter:blur(6px);padding:20px}
+.modal{background:#0d1117;border:1px solid #1e293b;border-radius:16px;width:100%;
+  max-width:540px;max-height:92vh;overflow-y:auto;padding:32px}
+.drop-zone{border:1px dashed #1e293b;border-radius:10px;padding:18px 16px;text-align:center;
+  cursor:pointer;color:#334155;font-size:13px;transition:border-color .2s;background:#080e19}
+.drop-zone:hover{border-color:#6366f1}
+.file-item{display:flex;align-items:center;justify-content:space-between;background:#0f172a;
+  border:1px solid #1e293b;border-radius:7px;padding:7px 12px}
+.comment-box{background:#080e19;border:1px solid #0f172a;border-left:3px solid #6366f1;border-radius:8px;padding:10px 14px}
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);border-radius:10px;
+  padding:12px 24px;font-size:14px;font-weight:700;z-index:2000;box-shadow:0 4px 20px rgba(0,0,0,.4);display:none}
+.toast.ok{background:#10b981;color:white}
+.toast.err{background:#ef4444;color:white}
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="authScreen" class="auth-wrap">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="auth-logo-icon">⚙️</div>
+      <span class="auth-title">OptimizaFlow</span>
+    </div>
+    <div class="auth-sub">PORTAL DEL EQUIPO</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLogin"    onclick="switchTab('login')">Iniciar sesión</button>
+      <button class="auth-tab"        id="tabRegister" onclick="switchTab('register')">Registrarse</button>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="panelLogin">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div><label class="lbl">Email</label>
+          <input id="loginEmail" class="inp" type="email" placeholder="tu@email.com"/></div>
+        <div><label class="lbl">Contraseña</label>
+          <input id="loginPass" class="inp" type="password" placeholder="••••••••"
+            onkeydown="if(event.key==='Enter')doLogin()"/></div>
+        <div id="loginErr" class="err-box"></div>
+        <button class="btn-primary" id="btnLogin" onclick="doLogin()">Ingresar</button>
+      </div>
+      <div style="text-align:center;margin-top:18px;font-size:13px;color:#334155">
+        ¿No tenés cuenta? <button class="btn-link" onclick="switchTab('register')">Registrate</button>
+      </div>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="panelRegister" style="display:none">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div><label class="lbl">Nombre completo <span style="color:#ef4444">*</span></label>
+          <input id="regNombre" class="inp" placeholder="Ej: Juan Pérez"/></div>
+        <div><label class="lbl">Email <span style="color:#ef4444">*</span></label>
+          <input id="regEmail" class="inp" type="email" placeholder="tu@email.com"/></div>
+        <div><label class="lbl">Equipo <span style="color:#ef4444">*</span></label>
+          <select id="regEquipo" class="inp">
+            <option value="">— Seleccioná tu equipo —</option>
+            <option>Almacenes y Logística</option>
+            <option>Gestión de Materiales</option>
+            <option>Logística y Transporte</option>
+            <option>Venta de Materiales</option>
+          </select></div>
+        <div><label class="lbl">Contraseña <span style="color:#ef4444">*</span></label>
+          <input id="regPass" class="inp" type="password" placeholder="Mínimo 6 caracteres"/></div>
+        <div><label class="lbl">Confirmar contraseña <span style="color:#ef4444">*</span></label>
+          <input id="regPass2" class="inp" type="password" placeholder="Repetí la contraseña"
+            onkeydown="if(event.key==='Enter')doRegister()"/></div>
+        <div id="regErr" class="err-box"></div>
+        <button class="btn-primary" id="btnRegister" onclick="doRegister()">Solicitar acceso</button>
+      </div>
+      <div style="text-align:center;margin-top:18px;font-size:13px;color:#334155">
+        ¿Ya tenés cuenta? <button class="btn-link" onclick="switchTab('login')">Iniciá sesión</button>
+      </div>
+    </div>
+
+    <!-- PENDING -->
+    <div id="panelPending" style="display:none;text-align:center;padding:10px 0">
+      <div style="font-size:52px;margin-bottom:20px">⏳</div>
+      <div style="font-size:20px;font-weight:700;color:#f1f5f9;margin-bottom:10px">Solicitud enviada</div>
+      <div style="font-size:13px;color:#475569;line-height:1.7;margin-bottom:24px">
+        Tu registro está <strong style="color:#f59e0b">pendiente de aprobación</strong>.<br>
+        El administrador revisará tu cuenta y te dará acceso.<br><br>
+        <span style="color:#334155;font-size:12px">Podés volver más tarde e intentar iniciar sesión.</span>
+      </div>
+      <button class="btn-outline" onclick="switchTab('login')">Ir al login</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP SHELL -->
+<div id="appShell" style="display:none">
+  <div class="header">
+    <div class="header-inner">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="logo-icon">⚙️</div>
+        <div><div class="logo-title">OptimizaFlow</div><div class="logo-sub">PORTAL DEL EQUIPO</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="user-chip">
+          <div class="user-avatar" id="userAvatar"></div>
+          <span style="font-size:12px;font-weight:600;color:#94a3b8" id="userName"></span>
+        </div>
+        <button class="btn-ghost" onclick="doLogout()">Salir</button>
+        <button class="btn-sm" onclick="abrirModal()"><span style="font-size:16px">+</span> Nueva solicitud</button>
+      </div>
+    </div>
+  </div>
+  <div class="stats-bar">
+    <div class="stats-inner" id="statsBar"><span style="color:#334155;font-size:13px">Cargando…</span></div>
+  </div>
+  <div class="filter-bar">
+    <div class="filter-inner">
+      <select id="filtroEstado" class="inp-sm" onchange="renderCards()">
+        <option value="todos">Todos los estados</option>
+        <option value="pendiente">Pendiente</option>
+        <option value="desarrollo">En Desarrollo</option>
+        <option value="prueba">En Prueba</option>
+        <option value="produccion">En Producción</option>
+      </select>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#475569;cursor:pointer">
+        <input type="checkbox" id="soloMias" onchange="renderCards()"/> Solo mis solicitudes
+      </label>
+      <button style="background:none;border:1px solid #1e293b;border-radius:6px;color:#334155;cursor:pointer;padding:5px 12px;font-size:11px;font-family:inherit" onclick="loadData()">↻ Actualizar</button>
+      <span id="countLabel" style="margin-left:auto;font-size:12px;color:#334155"></span>
+    </div>
+  </div>
+  <div id="gridContainer" class="grid">
+    <div style="grid-column:1/-1;text-align:center;padding:60px 0;color:#334155">Cargando…</div>
+  </div>
+</div>
+
+<!-- Modal nueva solicitud -->
+<div class="overlay" id="modalOverlay" style="display:none">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+      <span style="font-size:20px;font-weight:700;color:#f1f5f9">Nueva solicitud</span>
+      <button style="background:none;border:none;color:#475569;cursor:pointer;font-size:22px" onclick="cerrarModal()">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px">
+      <div><label class="lbl">Título <span style="color:#ef4444">*</span></label>
+        <input id="formTitulo" class="inp" placeholder="Ej: Automatizar cierre mensual de cuentas"/></div>
+      <div><label class="lbl">Detalle de lo que necesitás</label>
+        <textarea id="formDesc" class="inp" placeholder="Describí el proceso actual y qué esperás mejorar…"></textarea></div>
+      <div><label class="lbl">Prioridad</label>
+        <div style="display:flex;gap:8px">
+          <button class="prio-btn active-alta" id="prio-alta"  onclick="setPrio('alta')">Alta</button>
+          <button class="prio-btn"             id="prio-media" onclick="setPrio('media')">Media</button>
+          <button class="prio-btn"             id="prio-baja"  onclick="setPrio('baja')">Baja</button>
+        </div></div>
+      <div>
+        <label class="lbl">Adjuntar archivos <span style="color:#334155;font-weight:400;text-transform:none;font-size:11px">(máx. 5 · 2 MB c/u)</span></label>
+        <div class="drop-zone" onclick="document.getElementById('fileInput').click()"
+          ondrop="handleDrop(event)" ondragover="event.preventDefault()">
+          <div style="font-size:24px;margin-bottom:6px">📎</div>
+          <div>Arrastrá archivos aquí o <span style="color:#6366f1">hacé click</span></div>
+          <div style="font-size:11px;margin-top:4px;color:#1e293b">Imágenes, PDF, Word, Excel…</div>
+        </div>
+        <input type="file" id="fileInput" multiple style="display:none" onchange="handleFiles(this.files)"/>
+        <div id="fileList" style="margin-top:8px;display:flex;flex-direction:column;gap:6px"></div>
+      </div>
+      <div id="formErr" class="err-box"></div>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:28px;justify-content:flex-end">
+      <button class="btn-outline" style="width:auto;padding:10px 24px" onclick="cerrarModal()">Cancelar</button>
+      <button id="btnEnviar" onclick="enviarSolicitud()" style="padding:10px 28px;border-radius:8px;border:none;
+        background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;cursor:pointer;font-size:14px;font-weight:700;font-family:inherit">
+        Enviar solicitud</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal detalle -->
+<div class="overlay" id="detalleOverlay" style="display:none">
+  <div class="modal" id="detalleContent"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API="https://script.google.com/macros/s/AKfycby6xK8H6ESoruYOfevHRb7gux4fRbbm1AMsP8PzDKD_mQdiPYLfjEPJ4UIP86f2-hN3/exec";
+const DRIVE_KEY="AIzaSyBO1fBGosYA8BJoHCWy6_SNIVW4nUpRx-4";
+const DRIVE_FOLDER="1SJFZt4A7kIEzWLTlQpKjgozxfj5i19WC";
+const STAGES=[
+  {id:"pendiente", label:"Pendiente",     color:"#94a3b8",bg:"rgba(148,163,184,0.10)"},
+  {id:"desarrollo",label:"En Desarrollo", color:"#f59e0b",bg:"rgba(245,158,11,0.10)"},
+  {id:"prueba",    label:"En Prueba",      color:"#6366f1",bg:"rgba(99,102,241,0.10)"},
+  {id:"produccion",label:"En Producción", color:"#10b981",bg:"rgba(16,185,129,0.10)"},
+];
+const PRIOS={alta:{color:"#ef4444"},media:{color:"#f59e0b"},baja:{color:"#10b981"}};
+let allData={solicitudes:[],usuarios:[],nextId:1};
+let currentUser=null, prioSelected="alta", adjuntos=[];
+
+function jsonpGet(extra=""){
+  return new Promise((res,rej)=>{
+    const cb="cb_"+Date.now(),sc=document.createElement("script");
+    window[cb]=d=>{delete window[cb];sc.remove();res(d);};
+    sc.src=API+"?callback="+cb+extra+"&t="+Date.now();
+    sc.onerror=()=>{delete window[cb];sc.remove();rej(new Error("net"));};
+    document.head.appendChild(sc);
+  });
+}
+function jsonpSave(d){
+  // Guardar sin archivos (los archivos van separados)
+  const sinArchivos = {
+    ...d,
+    solicitudes: (d.solicitudes||[]).map(s => ({...s, adjuntos: s.adjuntos?.length ? [{count: s.adjuntos.length}] : []}))
+  };
+  return jsonpGet("&action=save&data="+encodeURIComponent(JSON.stringify(sinArchivos)));
+}
+async function subirArchivoDrive(archivo){
+  const res = await fetch(API, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      action: "uploadfile",
+      name: archivo.name,
+      mimeType: archivo.type,
+      data: archivo.data
+    })
+  });
+  const json = await res.json();
+  if(!json.ok) throw new Error(json.error || "Upload failed");
+  return {name: json.name, driveId: json.driveId, url: json.url};
+}
+async function jsonpSaveFiles(solId, archivos){
+  if(!archivos||!archivos.length) return [];
+  const links=[];
+  for(const arch of archivos){
+    const link=await subirArchivoDrive(arch);
+    links.push(link);
+  }
+  await jsonpGet("&action=savefiles&id="+solId+"&files="+encodeURIComponent(JSON.stringify(links)));
+  return links;
+}
+function jsonpGetFiles(id){
+  return jsonpGet("&action=getfiles&id="+id);
+}
+
+async function hashPass(p){
+  const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(p));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
+function switchTab(tab){
+  document.getElementById("panelLogin").style.display   =tab==="login"   ?"block":"none";
+  document.getElementById("panelRegister").style.display=tab==="register"?"block":"none";
+  document.getElementById("panelPending").style.display ="none";
+  document.getElementById("tabLogin").className   ="auth-tab"+(tab==="login"   ?" active":"");
+  document.getElementById("tabRegister").className="auth-tab"+(tab==="register"?" active":"");
+  document.getElementById("loginErr").style.display="none";
+  document.getElementById("regErr").style.display="none";
+}
+
+async function doLogin(){
+  const email=document.getElementById("loginEmail").value.trim().toLowerCase();
+  const pass =document.getElementById("loginPass").value;
+  const err  =document.getElementById("loginErr");
+  if(!email||!pass){err.textContent="Completá email y contraseña.";err.style.display="block";return;}
+  const btn=document.getElementById("btnLogin");
+  btn.textContent="Ingresando…";btn.disabled=true;
+  try{const d=await jsonpGet();if(d&&d.nextId!==undefined)allData=d;}catch(e){}
+  const hash=await hashPass(pass);
+  const user=(allData.usuarios||[]).find(u=>u.email===email&&u.password===hash);
+  btn.textContent="Ingresar";btn.disabled=false;
+  if(!user){err.textContent="Email o contraseña incorrectos.";err.style.display="block";return;}
+  if(user.estado==="pendiente"){
+    document.getElementById("panelLogin").style.display="none";
+    document.getElementById("panelPending").style.display="block";
+    document.getElementById("tabLogin").className="auth-tab";
+    return;
+  }
+  if(user.estado==="rechazado"){err.textContent="Tu acceso fue rechazado. Contactá al administrador.";err.style.display="block";return;}
+  currentUser=user;
+  sessionStorage.setItem("of_user",JSON.stringify(user));
+  enterApp();
+}
+
+async function doRegister(){
+  const nombre=document.getElementById("regNombre").value.trim();
+  const email =document.getElementById("regEmail").value.trim().toLowerCase();
+  const equipo=document.getElementById("regEquipo").value;
+  const pass  =document.getElementById("regPass").value;
+  const pass2 =document.getElementById("regPass2").value;
+  const err   =document.getElementById("regErr");
+  if(!nombre||!email||!equipo||!pass){err.textContent="Completá todos los campos.";err.style.display="block";return;}
+  if(pass.length<6){err.textContent="La contraseña debe tener al menos 6 caracteres.";err.style.display="block";return;}
+  if(pass!==pass2){err.textContent="Las contraseñas no coinciden.";err.style.display="block";return;}
+  const btn=document.getElementById("btnRegister");
+  btn.textContent="Enviando…";btn.disabled=true;
+  try{const d=await jsonpGet();if(d&&d.nextId!==undefined)allData=d;}catch(e){}
+  if((allData.usuarios||[]).find(u=>u.email===email)){
+    err.textContent="Ya existe una cuenta con ese email.";err.style.display="block";
+    btn.textContent="Solicitar acceso";btn.disabled=false;return;
+  }
+  const hash=await hashPass(pass);
+  const nuevo={id:"u_"+Date.now(),nombre,email,equipo,password:hash,estado:"pendiente",fechaRegistro:new Date().toISOString()};
+  allData.usuarios=[...(allData.usuarios||[]),nuevo];
+  try{
+    await jsonpSave(allData);
+    document.getElementById("panelRegister").style.display="none";
+    document.getElementById("panelPending").style.display="block";
+    document.getElementById("tabRegister").className="auth-tab";
+  }catch(e){
+    err.textContent="Error al registrarse. Intentá de nuevo.";err.style.display="block";
+    allData.usuarios.pop();
+  }
+  btn.textContent="Solicitar acceso";btn.disabled=false;
+}
+
+function doLogout(){
+  currentUser=null;sessionStorage.removeItem("of_user");
+  document.getElementById("appShell").style.display="none";
+  document.getElementById("authScreen").style.display="flex";
+  switchTab("login");
+}
+
+function enterApp(){
+  document.getElementById("authScreen").style.display="none";
+  document.getElementById("appShell").style.display="block";
+  const initials=currentUser.nombre.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+  document.getElementById("userAvatar").textContent=initials;
+  document.getElementById("userName").textContent=currentUser.nombre;
+  loadData();
+}
+
+function loadData(){
+  return new Promise(res=>{
+    const cb="cb_"+Date.now(),sc=document.createElement("script");
+    window[cb]=d=>{
+      if(d&&d.nextId!==undefined){
+        allData=d;
+        if(currentUser){const f=(allData.usuarios||[]).find(u=>u.id===currentUser.id);if(f)currentUser=f;}
+      }
+      delete window[cb];sc.remove();renderStats();renderCards();res();
+    };
+    sc.src=API+"?callback="+cb+"&t="+Date.now();
+    sc.onerror=()=>{delete window[cb];sc.remove();renderStats();renderCards();res();};
+    document.head.appendChild(sc);
+  });
+}
+
+function badgePrio(id){
+  const p=PRIOS[id]||PRIOS.media,lbl={alta:"Alta",media:"Media",baja:"Baja"}[id]||id;
+  return `<span class="badge-prioridad" style="border:1px solid ${p.color}35;color:${p.color};background:${p.color}12"><span style="width:6px;height:6px;border-radius:50%;background:${p.color};display:inline-block"></span>${lbl}</span>`;
+}
+function badgeEstado(id){
+  const s=STAGES.find(x=>x.id===id)||STAGES[0];
+  return `<span class="badge-estado" style="color:${s.color};background:${s.bg};border:1px solid ${s.color}30">${s.label}</span>`;
+}
+
+function renderStats(){
+  const sol=allData.solicitudes||[];
+  document.getElementById("statsBar").innerHTML=STAGES.map(s=>{
+    const c=sol.filter(x=>x.estado===s.id).length;
+    return `<div style="display:flex;align-items:center;gap:8px"><div style="width:8px;height:8px;border-radius:50%;background:${s.color}"></div><span style="font-size:12px;color:#334155">${s.label}</span><span style="font-size:15px;font-weight:800;color:${s.color}">${c}</span></div>`;
+  }).join("")+`<div style="margin-left:auto;display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:#1e293b">Total</span><span style="font-size:15px;font-weight:800;color:#f1f5f9">${sol.length}</span></div>`;
+}
+
+function renderCards(){
+  const container=document.getElementById("gridContainer");
+  const est=document.getElementById("filtroEstado").value;
+  const soloMias=document.getElementById("soloMias").checked;
+  let sol=(allData.solicitudes||[])
+    .filter(s=>est==="todos"||s.estado===est)
+    .filter(s=>!soloMias||s.solicitanteId===currentUser?.id)
+    .sort((a,b)=>new Date(b.fechaCreacion)-new Date(a.fechaCreacion));
+  document.getElementById("countLabel").textContent=sol.length+" solicitud"+(sol.length!==1?"es":"");
+  if(!sol.length){container.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:64px 0;color:#1e293b"><div style="font-size:40px;margin-bottom:12px">📭</div><div style="font-size:14px">No hay solicitudes${est!=="todos"?" en este estado":""}</div></div>`;return;}
+  container.innerHTML=sol.map(s=>{
+    const stage=STAGES.find(x=>x.id===s.estado)||STAGES[0];
+    const fecha=new Date(s.fechaCreacion).toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric"});
+    return `<div class="card" style="border-left:3px solid ${stage.color}" onclick="verDetalle(${s.id})"
+      onmouseenter="this.style.boxShadow='0 4px 20px ${stage.color}18';this.style.borderColor='${stage.color}'"
+      onmouseleave="this.style.boxShadow='none';this.style.borderColor='${stage.color}'">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div style="font-size:14px;font-weight:700;color:#f1f5f9;line-height:1.3;flex:1;padding-right:8px">${s.titulo}</div>
+        ${badgePrio(s.prioridad)}</div>
+      <div style="font-size:12px;color:#475569;margin-bottom:10px">${s.equipo||""} · ${s.solicitante}</div>
+      ${s.descripcion?`<div style="font-size:12px;color:#64748b;line-height:1.5;margin-bottom:10px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${s.descripcion}</div>`:""}
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        ${badgeEstado(s.estado)}
+        <div style="display:flex;align-items:center;gap:8px">
+          ${s.adjuntos?.length?`<span style="font-size:11px;color:#334155">📎${s.adjuntos.length}</span>`:""}
+          ${s.comentarios?.length?`<span style="font-size:11px;color:#6366f1">💬${s.comentarios.length}</span>`:""}
+          <span style="font-size:11px;color:#334155">📅${fecha}</span>
+        </div></div></div>`;
+  }).join("");
+}
+
+function detalleInnerHTML(s, adjuntosData){
+  const fecha=new Date(s.fechaCreacion).toLocaleDateString("es-AR",{day:"2-digit",month:"long",year:"numeric",hour:"2-digit",minute:"2-digit"});
+  return `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px">
+      <div style="flex:1;padding-right:16px">
+        <div style="font-size:18px;font-weight:700;color:#f1f5f9;line-height:1.3;margin-bottom:10px">${s.titulo}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">${badgeEstado(s.estado)} ${badgePrio(s.prioridad)}</div>
+      </div>
+      <button style="background:none;border:none;color:#475569;cursor:pointer;font-size:22px" onclick="document.getElementById('detalleOverlay').style.display='none'">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;gap:12px"><span style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;min-width:130px">Solicitante</span><span style="font-size:13px;color:#94a3b8">${s.solicitante}</span></div>
+      <div style="display:flex;gap:12px"><span style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;min-width:130px">Equipo</span><span style="font-size:13px;color:#94a3b8">${s.equipo||"—"}</span></div>
+      <div style="display:flex;gap:12px"><span style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;min-width:130px">Fecha</span><span style="font-size:13px;color:#94a3b8">${fecha}</span></div>
+      ${s.descripcion?`<div><div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#334155;margin-bottom:6px">Detalle</div><div style="font-size:13px;color:#94a3b8;line-height:1.6;background:#080e19;border-radius:8px;padding:12px 14px;border:1px solid #0f172a">${s.descripcion}</div></div>`:""}
+      ${adjuntosData&&adjuntosData.length?`<div><div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#334155;margin-bottom:8px">Archivos adjuntos</div><div style="display:flex;flex-direction:column;gap:6px">${adjuntosData.map(f=>`<a href="${f.url||f.data}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:8px;background:#0f172a;border:1px solid #1e293b;border-radius:7px;padding:8px 12px;color:#6366f1;text-decoration:none;font-size:12px">📄 ${f.name}<span style="margin-left:auto;font-size:10px;color:#334155">Ver en Drive ↗</span></a>`).join("")}</div></div>`:""}
+      ${s.comentarios?.length?`<div><div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#334155;margin-bottom:8px">Comentarios</div><div style="display:flex;flex-direction:column;gap:8px">${s.comentarios.map(c=>`<div class="comment-box"><div style="font-size:11px;color:#6366f1;font-weight:700;margin-bottom:4px">💬 ${new Date(c.fecha).toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"})}</div><div style="font-size:13px;color:#94a3b8;line-height:1.5">${c.texto}</div></div>`).join("")}</div></div>`:""}
+    </div>`;
+}
+async function verDetalle(id){
+  const s=(allData.solicitudes||[]).find(x=>x.id===id);if(!s)return;
+  document.getElementById("detalleContent").innerHTML=detalleInnerHTML(s,[]);
+  document.getElementById("detalleOverlay").style.display="flex";
+  if(s.tieneAdjuntos){
+    try{
+      const archivos=await jsonpGetFiles(id);
+      const lista=Array.isArray(archivos)?archivos:[];
+      document.getElementById("detalleContent").innerHTML=detalleInnerHTML(s,lista);
+    }catch(e){}
+  }
+}
+
+function abrirModal(){
+  document.getElementById("formTitulo").value="";
+  document.getElementById("formDesc").value="";
+  document.getElementById("formErr").style.display="none";
+  adjuntos=[];document.getElementById("fileList").innerHTML="";
+  setPrio("alta");
+  document.getElementById("modalOverlay").style.display="flex";
+}
+function cerrarModal(){document.getElementById("modalOverlay").style.display="none";}
+function setPrio(p){
+  prioSelected=p;
+  ["alta","media","baja"].forEach(id=>{document.getElementById("prio-"+id).className="prio-btn"+(id===p?" active-"+id:"");});
+}
+// Convierte archivo a base64, redimensionando imágenes a máx 800px para que quepan en la URL
+function procesarArchivo(f){
+  return new Promise((res,rej)=>{
+    const isImg=/^image\//.test(f.type);
+    const reader=new FileReader();
+    reader.onerror=rej;
+    reader.onload=e=>{
+      if(!isImg){res({name:f.name,type:f.type,size:f.size,data:e.target.result});return;}
+      const img=new Image();
+      img.onload=()=>{
+        const MAX=800;
+        let w=img.width,h=img.height;
+        if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
+        const canvas=document.createElement("canvas");
+        canvas.width=w;canvas.height=h;
+        canvas.getContext("2d").drawImage(img,0,0,w,h);
+        const data=canvas.toDataURL("image/jpeg",0.75);
+        res({name:f.name.replace(/\.[^.]+$/,".jpg"),type:"image/jpeg",size:data.length,data});
+      };
+      img.onerror=rej;
+      img.src=e.target.result;
+    };
+    reader.readAsDataURL(f);
+  });
+}
+async function handleFiles(files){
+  const MAX=5*1024*1024;
+  for(const f of Array.from(files)){if(f.size>MAX){showToast(`"${f.name}" supera 5 MB`,"err");return;}}
+  const enc=await Promise.all(Array.from(files).map(procesarArchivo));
+  adjuntos=[...adjuntos,...enc].slice(0,5);renderFileList();
+}
+function handleDrop(e){e.preventDefault();handleFiles(e.dataTransfer.files);}
+function renderFileList(){
+  document.getElementById("fileList").innerHTML=adjuntos.map((f,i)=>`
+    <div class="file-item"><span style="font-size:12px;color:#94a3b8">📄 ${f.name} <span style="color:#334155">(${(f.size/1024).toFixed(0)} KB)</span></span>
+    <button onclick="adjuntos.splice(${i},1);renderFileList()" style="background:none;border:none;color:#475569;cursor:pointer;font-size:14px">✕</button></div>`).join("");
+}
+async function enviarSolicitud(){
+  const titulo=document.getElementById("formTitulo").value.trim();
+  const desc  =document.getElementById("formDesc").value.trim();
+  const err   =document.getElementById("formErr");
+  if(!titulo){err.textContent="El titulo es obligatorio.";err.style.display="block";return;}
+  err.style.display="none";
+  const btn=document.getElementById("btnEnviar");btn.textContent="Enviando…";btn.disabled=true;
+  const solId=allData.nextId;
+  const archivosLocales=[...adjuntos];
+  const nueva={id:solId,titulo,descripcion:desc,equipo:currentUser.equipo,
+    solicitante:currentUser.nombre,solicitanteId:currentUser.id,prioridad:prioSelected,
+    estado:"pendiente",fechaCreacion:new Date().toISOString(),
+    tieneAdjuntos:archivosLocales.length>0,adjuntos:[],comentarios:[]};
+  allData.solicitudes=[...(allData.solicitudes||[]),nueva];
+  allData.nextId=solId+1;
+  try{
+    await jsonpSave(allData);
+    if(archivosLocales.length){
+      btn.textContent="Subiendo archivos… ("+archivosLocales.length+")";
+      try{
+        const links=await jsonpSaveFiles(solId,archivosLocales);
+        // Actualizar la solicitud con los links de Drive
+        const idx=allData.solicitudes.findIndex(s=>s.id===solId);
+        if(idx>=0) allData.solicitudes[idx].adjuntos=links;
+      }
+      catch(fe){console.error(fe);showToast("Solicitud enviada pero los archivos no se subieron","err");}
+    }
+    cerrarModal();showToast("✅ Solicitud enviada correctamente","ok");
+    renderStats();renderCards();
+  }catch(e){
+    allData.solicitudes.pop();allData.nextId--;
+    showToast("⚠️ Error al enviar. Intenta de nuevo.","err");
+  }
+  btn.textContent="Enviar solicitud";btn.disabled=false;
+}
+function showToast(msg,type){
+  const t=document.getElementById("toast");t.textContent=msg;t.className="toast "+type;t.style.display="block";
+  setTimeout(()=>t.style.display="none",3500);
+}
+const saved=sessionStorage.getItem("of_user");
+if(saved){currentUser=JSON.parse(saved);enterApp();}
+setInterval(()=>{if(currentUser)loadData();},30000);
+</script>
+</body>
+</html>
