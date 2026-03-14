@@ -6,6 +6,7 @@
 <title>OptimizaFlow — Panel Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{min-height:100vh;background:#060b14;font-family:'Sora',sans-serif;color:#e2e8f0}
@@ -209,6 +210,39 @@ input.inp-sm::placeholder{color:#334155}
 </div>
 
 <!-- Modal detalle solicitud (vista) -->
+<div class="overlay" id="detalleOverlay" style="display:none;align-items:center;justify-content:center">
+  <div class="modal" id="detalleContent" style="max-height:85vh;overflow-y:auto"></div>
+</div>
+
+
+<!-- DASHBOARD -->
+<div id="sectionDashboard" style="display:none">
+  <div style="max-width:1100px;margin:0 auto;padding:28px 20px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:32px" id="kpiCards"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px">
+      <div style="background:#0d1117;border:1px solid #1e293b;border-radius:14px;padding:22px">
+        <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#475569;margin-bottom:16px">Solicitudes por estado</div>
+        <canvas id="chartEstados" height="220"></canvas>
+      </div>
+      <div style="background:#0d1117;border:1px solid #1e293b;border-radius:14px;padding:22px">
+        <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#475569;margin-bottom:16px">Solicitudes por sector</div>
+        <canvas id="chartSectores" height="220"></canvas>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div style="background:#0d1117;border:1px solid #1e293b;border-radius:14px;padding:22px">
+        <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#475569;margin-bottom:16px">Tiempo promedio por estado (días)</div>
+        <canvas id="chartTiempos" height="220"></canvas>
+      </div>
+      <div style="background:#0d1117;border:1px solid #1e293b;border-radius:14px;padding:22px">
+        <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#475569;margin-bottom:16px">Solicitudes por prioridad</div>
+        <canvas id="chartPrioridad" height="220"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal detalle solicitud -->
 <div class="overlay" id="detalleOverlay" style="display:none;align-items:center;justify-content:center">
   <div class="modal" id="detalleContent" style="max-height:85vh;overflow-y:auto"></div>
 </div>
@@ -502,7 +536,7 @@ function renderLista(sol){
     const enProduccion=s.estado==="produccion";
     const btnGestionar=enProduccion
       ? `<button class="btn-gestionar" disabled style="opacity:0.35;cursor:not-allowed">✓ Listo</button>`
-      : `<button class="btn-gestionar" onclick="abrirAdmin(${s.id})">Gestionar</button>`;
+      : `<button class="btn-gestionar" onclick="event.stopPropagation();abrirAdmin(${s.id})">Gestionar</button>`;
     return `<div class="lista-row">
       <div><div style="font-size:13px;font-weight:600;color:#f1f5f9">${s.titulo}</div><div style="font-size:11px;color:#475569;margin-top:2px">${s.solicitante}</div></div>
       <span style="font-size:12px;color:#475569">${s.equipo||"—"}</span>
@@ -588,6 +622,13 @@ async function guardarAdmin(){
   allData.solicitudes=(allData.solicitudes||[]).map(s=>{
     if(s.id!==modalSol.id)return s;
     const u={...s,estado:modalEstado,prioridad:modalPrio,equipo:document.getElementById('adminEquipo').value};
+    if(modalEstado!==s.estado){
+      const hist=[...(s.historialEstados||[{estado:s.estado,desde:s.fechaCreacion}])];
+      hist.push({estado:modalEstado,desde:new Date().toISOString()});
+      u.historialEstados=hist;
+    } else {
+      u.historialEstados=s.historialEstados||[{estado:s.estado,desde:s.fechaCreacion}];
+    }
     if(comentario)u.comentarios=[...(s.comentarios||[]),{texto:comentario,fecha:new Date().toISOString()}];
     solModificada=u;
     return u;
@@ -687,13 +728,17 @@ function tiempoEnEstado(sol){
   const hist=sol.historialEstados;
   if(!hist||hist.length<2) return {};
   const tiempos={};
+  const estadosFinales=["produccion","rechazado"];
   for(let i=0;i<hist.length-1;i++){
     const dias=(new Date(hist[i+1].desde)-new Date(hist[i].desde))/(1000*60*60*24);
     tiempos[hist[i].estado]=(tiempos[hist[i].estado]||0)+dias;
   }
+  // Solo contar el tiempo en el último estado si NO es un estado final
   const ultimo=hist[hist.length-1];
-  const diasActual=(new Date()-new Date(ultimo.desde))/(1000*60*60*24);
-  tiempos[ultimo.estado]=(tiempos[ultimo.estado]||0)+diasActual;
+  if(!estadosFinales.includes(ultimo.estado)){
+    const diasActual=(new Date()-new Date(ultimo.desde))/(1000*60*60*24);
+    tiempos[ultimo.estado]=(tiempos[ultimo.estado]||0)+diasActual;
+  }
   return tiempos;
 }
 function renderDashboard(){
