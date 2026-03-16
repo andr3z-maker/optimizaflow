@@ -127,6 +127,7 @@ select.inp-sm{background:#0d1117;border:1px solid #1e293b;border-radius:8px;padd
             <option>Gestión de Materiales</option>
             <option>Logística y Transporte</option>
             <option>Venta de Materiales</option>
+            <option>Catalogación</option>
           </select></div>
         <div><label class="lbl">Contraseña <span style="color:#ef4444">*</span></label>
           <input id="regPass" class="inp" type="password" placeholder="Mínimo 6 caracteres"/></div>
@@ -216,6 +217,7 @@ select.inp-sm{background:#0d1117;border:1px solid #1e293b;border-radius:8px;padd
           <option value="Gestión de Materiales">Gestión de Materiales</option>
           <option value="Logística y Transporte">Logística y Transporte</option>
           <option value="Venta de Materiales">Venta de Materiales</option>
+          <option value="Catalogación">Catalogación</option>
         </select></div>
       <div><label class="lbl">Prioridad</label>
         <div style="display:flex;gap:8px">
@@ -317,7 +319,7 @@ async function doLogin(){
   }
   if(user.estado==="rechazado"){err.textContent="Tu acceso fue rechazado. Contactá al administrador.";err.style.display="block";return;}
   currentUser=user;
-  sessionStorage.setItem("of_user",JSON.stringify(user));
+  try{sessionStorage.setItem("of_user",JSON.stringify(user));}catch(e){}
   enterApp();
 }
 
@@ -357,7 +359,7 @@ async function doRegister(){
 }
 
 function doLogout(){
-  currentUser=null;sessionStorage.removeItem("of_user");
+  currentUser=null;try{sessionStorage.removeItem("of_user");}catch(e){}
   document.getElementById("appShell").style.display="none";
   document.getElementById("authScreen").style.display="flex";
   switchTab("login");
@@ -521,8 +523,8 @@ function showToast(msg,type){
   const t=document.getElementById("toast");t.textContent=msg;t.className="toast "+type;t.style.display="block";
   setTimeout(()=>t.style.display="none",3500);
 }
-const saved=sessionStorage.getItem("of_user");
-if(saved){currentUser=JSON.parse(saved);enterApp();}
+let saved=null;try{saved=sessionStorage.getItem("of_user");}catch(e){}
+if(saved){try{currentUser=JSON.parse(saved);enterApp();}catch(e){}}
 setInterval(()=>{if(currentUser)loadData();},30000);
 </script>
 </body>
