@@ -451,7 +451,12 @@ function getFiltradas(){
     .filter(s=>prio==="todas"||s.prioridad===prio)
     .filter(s=>eq==="todos"||(s.equipo||"")=== eq)
     .filter(s=>!busq||s.titulo.toLowerCase().includes(busq)||(s.solicitante||"").toLowerCase().includes(busq))
-    .sort((a,b)=>new Date(b.fechaCreacion)-new Date(a.fechaCreacion));
+    .sort((a,b)=>{
+    const po={alta:0,media:1,baja:2};
+    const pd=(po[a.prioridad]??1)-(po[b.prioridad]??1);
+    if(pd!==0) return pd;
+    return new Date(a.fechaCreacion)-new Date(b.fechaCreacion);
+  });
 }
 function setVista(k){
   vistaKanban=k;
