@@ -86,6 +86,11 @@ input.inp-sm::placeholder{color:#334155}
   color:#ef4444;cursor:pointer;font-size:12px;font-weight:700;font-family:inherit}
 .btn-sector{padding:7px 16px;border-radius:7px;border:1px solid #6366f1;background:transparent;
   color:#6366f1;cursor:pointer;font-size:12px;font-weight:700;font-family:inherit}
+.btn-gerente{padding:7px 16px;border-radius:7px;border:none;background:linear-gradient(135deg,#f59e0b,#d97706);
+  color:white;cursor:pointer;font-size:12px;font-weight:700;font-family:inherit}
+.btn-gerente.activo{background:linear-gradient(135deg,#f59e0b,#d97706);box-shadow:0 0 8px #f59e0b60}
+.badge-gerente{font-size:10px;font-weight:700;background:linear-gradient(135deg,#f59e0b,#d97706);color:white;
+  border-radius:20px;padding:2px 8px;letter-spacing:.05em;text-transform:uppercase}
 .status-badge{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
 </style>
 </head>
@@ -361,12 +366,14 @@ function userCardHTML(u,estado){
   const initials=u.nombre.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
   const colors={pendiente:"#f59e0b",aprobado:"#10b981",rechazado:"#ef4444"};
   const fecha=new Date(u.fechaRegistro).toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric"});
+  const esGerente=u.rol==="gerente";
   let actions="";
   if(estado==="pendiente"){
     actions=`<button class="btn-approve" onclick="cambiarEstadoUser('${u.id}','aprobado')">✓ Aprobar</button>
              <button class="btn-reject"  onclick="cambiarEstadoUser('${u.id}','rechazado')">✕ Rechazar</button>`;
   } else if(estado==="aprobado"){
-    actions=`<button class="btn-sector" onclick="abrirCambiarSector('${u.id}')">✎ Sector</button>
+    actions=`<button class="${esGerente?'btn-gerente activo':'btn-gerente'}" onclick="toggleGerente('${u.id}')">${esGerente?'★ Gerente':'☆ Gerente'}</button>
+             <button class="btn-sector" onclick="abrirCambiarSector('${u.id}')">✎ Sector</button>
              <button class="btn-reject" onclick="cambiarEstadoUser('${u.id}','rechazado')">Revocar acceso</button>`;
   } else {
     actions=`<button class="btn-approve" onclick="cambiarEstadoUser('${u.id}','aprobado')">Aprobar</button>`;
@@ -374,7 +381,7 @@ function userCardHTML(u,estado){
   return `<div class="user-card">
     <div class="user-avatar" style="background:${colors[estado]}22;color:${colors[estado]};border:1px solid ${colors[estado]}40">${initials}</div>
     <div class="user-info">
-      <div class="user-name">${u.nombre}</div>
+      <div class="user-name" style="display:flex;align-items:center;gap:8px">${u.nombre}${esGerente?'<span class="badge-gerente">Gerente</span>':''}</div>
       <div class="user-detail">${u.email} · ${u.equipo} · Registro: ${fecha}</div>
     </div>
     <div class="user-actions">${actions}</div>
@@ -387,6 +394,17 @@ async function cambiarEstadoUser(uid,nuevoEstado){
   await saveData(null);
   const msg={aprobado:"✓ Usuario aprobado",rechazado:"Usuario rechazado"}[nuevoEstado]||"Actualizado";
   showToast(msg,nuevoEstado==="aprobado"?"ok":"err");
+}
+async function toggleGerente(uid){
+  allData.usuarios=(allData.usuarios||[]).map(u=>{
+    if(u.id!==uid) return u;
+    const nuevoRol=u.rol==="gerente"?null:"gerente";
+    return {...u,rol:nuevoRol};
+  });
+  renderUsers();
+  await saveData(null);
+  const u=(allData.usuarios||[]).find(x=>x.id===uid);
+  showToast(u?.rol==="gerente"?"★ Marcado como Gerente":"Rol de Gerente removido","ok");
 }
 
 // ── SOLICITUDES ──────────────────────────────────────────────────────────────

@@ -127,7 +127,6 @@ select.inp-sm{background:#0d1117;border:1px solid #1e293b;border-radius:8px;padd
             <option>Gestión de Materiales</option>
             <option>Logística y Transporte</option>
             <option>Venta de Materiales</option>
-            <option>Catalogación</option>
           </select></div>
         <div><label class="lbl">Contraseña <span style="color:#ef4444">*</span></label>
           <input id="regPass" class="inp" type="password" placeholder="Mínimo 6 caracteres"/></div>
@@ -217,13 +216,12 @@ select.inp-sm{background:#0d1117;border:1px solid #1e293b;border-radius:8px;padd
           <option value="Gestión de Materiales">Gestión de Materiales</option>
           <option value="Logística y Transporte">Logística y Transporte</option>
           <option value="Venta de Materiales">Venta de Materiales</option>
-          <option value="Catalogación">Catalogación</option>
         </select></div>
       <div><label class="lbl">Prioridad</label>
         <div style="display:flex;gap:8px">
-          <button class="prio-btn"             id="prio-alta"  onclick="setPrio('alta')">Alta</button>
+          <button class="prio-btn active-alta" id="prio-alta"  onclick="setPrio('alta')">Alta</button>
           <button class="prio-btn"             id="prio-media" onclick="setPrio('media')">Media</button>
-          <button class="prio-btn active-baja"  id="prio-baja"  onclick="setPrio('baja')">Baja</button>
+          <button class="prio-btn"             id="prio-baja"  onclick="setPrio('baja')">Baja</button>
         </div></div>
       <div id="formErr" class="err-box"></div>
       <div style="display:flex;gap:12px;justify-content:flex-end">
@@ -401,7 +399,7 @@ function badgeEstado(id){
 
 function renderStats(){
   const sol=(allData.solicitudes||[])
-    .filter(s=>s.equipo===currentUser?.equipo||s.solicitanteId===currentUser?.id);
+    .filter(s=>currentUser?.rol==="gerente" || s.equipo===currentUser?.equipo||s.solicitanteId===currentUser?.id);
   document.getElementById("statsBar").innerHTML=STAGES.map(s=>{
     const c=sol.filter(x=>x.estado===s.id).length;
     return `<div style="display:flex;align-items:center;gap:8px"><div style="width:8px;height:8px;border-radius:50%;background:${s.color}"></div><span style="font-size:12px;color:#334155">${s.label}</span><span style="font-size:15px;font-weight:800;color:${s.color}">${c}</span></div>`;
@@ -413,7 +411,7 @@ function renderCards(){
   const est=document.getElementById("filtroEstado").value;
   const soloMias=document.getElementById("soloMias").checked;
   let sol=(allData.solicitudes||[])
-    .filter(s=>s.equipo===currentUser?.equipo||s.solicitanteId===currentUser?.id)
+    .filter(s=>currentUser?.rol==="gerente" || s.equipo===currentUser?.equipo||s.solicitanteId===currentUser?.id)
     .filter(s=>est==="todos"||s.estado===est)
     .filter(s=>!soloMias||s.solicitanteId===currentUser?.id)
     .sort((a,b)=>new Date(b.fechaCreacion)-new Date(a.fechaCreacion));
@@ -484,7 +482,7 @@ function abrirModal(){
   document.getElementById("formDesc").value="";
   document.getElementById("formErr").style.display="none";
   document.getElementById("formEquipo").value=currentUser.equipo||"Gestión de Materiales";
-  setPrio("baja");
+  setPrio("alta");
   document.getElementById("modalOverlay").style.display="flex";
 }
 function cerrarModal(){document.getElementById("modalOverlay").style.display="none";}
