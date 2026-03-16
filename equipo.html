@@ -221,9 +221,9 @@ select.inp-sm{background:#0d1117;border:1px solid #1e293b;border-radius:8px;padd
         </select></div>
       <div><label class="lbl">Prioridad</label>
         <div style="display:flex;gap:8px">
-          <button class="prio-btn active-alta" id="prio-alta"  onclick="setPrio('alta')">Alta</button>
+          <button class="prio-btn"             id="prio-alta"  onclick="setPrio('alta')">Alta</button>
           <button class="prio-btn"             id="prio-media" onclick="setPrio('media')">Media</button>
-          <button class="prio-btn"             id="prio-baja"  onclick="setPrio('baja')">Baja</button>
+          <button class="prio-btn active-baja"  id="prio-baja"  onclick="setPrio('baja')">Baja</button>
         </div></div>
       <div id="formErr" class="err-box"></div>
       <div style="display:flex;gap:12px;justify-content:flex-end">
@@ -319,7 +319,7 @@ async function doLogin(){
   }
   if(user.estado==="rechazado"){err.textContent="Tu acceso fue rechazado. Contactá al administrador.";err.style.display="block";return;}
   currentUser=user;
-  try{sessionStorage.setItem("of_user",JSON.stringify(user));}catch(e){}
+  try{document.cookie="of_user="+encodeURIComponent(JSON.stringify(user))+";path=/;max-age=86400";}catch(e){}
   enterApp();
 }
 
@@ -359,7 +359,7 @@ async function doRegister(){
 }
 
 function doLogout(){
-  currentUser=null;try{sessionStorage.removeItem("of_user");}catch(e){}
+  currentUser=null;try{document.cookie="of_user=;path=/;max-age=0";}catch(e){}
   document.getElementById("appShell").style.display="none";
   document.getElementById("authScreen").style.display="flex";
   switchTab("login");
@@ -484,7 +484,7 @@ function abrirModal(){
   document.getElementById("formDesc").value="";
   document.getElementById("formErr").style.display="none";
   document.getElementById("formEquipo").value=currentUser.equipo||"Gestión de Materiales";
-  setPrio("alta");
+  setPrio("baja");
   document.getElementById("modalOverlay").style.display="flex";
 }
 function cerrarModal(){document.getElementById("modalOverlay").style.display="none";}
@@ -523,7 +523,7 @@ function showToast(msg,type){
   const t=document.getElementById("toast");t.textContent=msg;t.className="toast "+type;t.style.display="block";
   setTimeout(()=>t.style.display="none",3500);
 }
-let saved=null;try{saved=sessionStorage.getItem("of_user");}catch(e){}
+let saved=null;try{const m=document.cookie.match(/(?:^|;)\s*of_user=([^;]*)/);saved=m?decodeURIComponent(m[1]):null;}catch(e){}
 if(saved){try{currentUser=JSON.parse(saved);enterApp();}catch(e){}}
 setInterval(()=>{if(currentUser)loadData();},30000);
 </script>
