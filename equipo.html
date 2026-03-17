@@ -157,7 +157,7 @@ select.inp-sm{background:var(--bg3);border:1px solid var(--border);border-radius
         <div id="loginErr" class="err-box"></div>
         <button class="btn-primary" id="btnLogin" onclick="doLogin()">Ingresar</button>
       </div>
-      <div style="text-align:center;margin-top:18px;font-size:13px;color:#334155">
+      <div style="text-align:center;margin-top:18px;font-size:13px;color:var(--text4)">
         ¿No tenés cuenta? <button class="btn-link" onclick="switchTab('register')">Registrate</button>
       </div>
     </div>
@@ -186,7 +186,7 @@ select.inp-sm{background:var(--bg3);border:1px solid var(--border);border-radius
         <div id="regErr" class="err-box"></div>
         <button class="btn-primary" id="btnRegister" onclick="doRegister()">Solicitar acceso</button>
       </div>
-      <div style="text-align:center;margin-top:18px;font-size:13px;color:#334155">
+      <div style="text-align:center;margin-top:18px;font-size:13px;color:var(--text4)">
         ¿Ya tenés cuenta? <button class="btn-link" onclick="switchTab('login')">Iniciá sesión</button>
       </div>
     </div>
@@ -194,7 +194,7 @@ select.inp-sm{background:var(--bg3);border:1px solid var(--border);border-radius
     <!-- PENDING -->
     <div id="panelPending" style="display:none;text-align:center;padding:10px 0">
       <div style="font-size:52px;margin-bottom:20px">⏳</div>
-      <div style="font-size:20px;font-weight:700;color:#f1f5f9;margin-bottom:10px">Solicitud enviada</div>
+      <div style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:10px">Solicitud enviada</div>
       <div style="font-size:13px;color:#475569;line-height:1.7;margin-bottom:24px">
         Tu registro está <strong style="color:#f59e0b">pendiente de aprobación</strong>.<br>
         El administrador revisará tu cuenta y te dará acceso.<br><br>
@@ -216,7 +216,7 @@ select.inp-sm{background:var(--bg3);border:1px solid var(--border);border-radius
       <div style="display:flex;align-items:center;gap:10px">
         <div class="user-chip">
           <div class="user-avatar" id="userAvatar"></div>
-          <span style="font-size:12px;font-weight:600;color:#94a3b8" id="userName"></span>
+          <span style="font-size:12px;font-weight:600;color:var(--text2)" id="userName"></span>
         </div>
         <button class="btn-ghost" onclick="doLogout()">Salir</button>
         <button class="btn-theme" id="btnTheme" onclick="toggleTheme()" title="Cambiar tema">🌙</button>
@@ -240,16 +240,16 @@ select.inp-sm{background:var(--bg3);border:1px solid var(--border);border-radius
       <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#475569;cursor:pointer">
         <input type="checkbox" id="soloMias" onchange="renderCards()"/> Solo mis solicitudes
       </label>
-      <button style="background:none;border:1px solid #1e293b;border-radius:6px;color:#334155;cursor:pointer;padding:5px 12px;font-size:11px;font-family:inherit" onclick="loadData()">↻ Actualizar</button>
+      <button style="background:none;border:1px solid var(--border);border-radius:6px;color:#334155;cursor:pointer;padding:5px 12px;font-size:11px;font-family:inherit" onclick="loadData()">↻ Actualizar</button>
       <div class="btn-vista" style="margin-left:auto">
         <button id="btnGrid" onclick="setVista('grid')">▦ Grilla</button>
         <button id="btnKanban" class="active" onclick="setVista('kanban')">☰ Kanban</button>
       </div>
-      <span id="countLabel" style="font-size:12px;color:#334155"></span>
+      <span id="countLabel" style="font-size:12px;color:var(--text4)"></span>
     </div>
   </div>
   <div id="gridContainer" class="grid" style="display:none">
-    <div style="grid-column:1/-1;text-align:center;padding:60px 0;color:#334155">Cargando…</div>
+    <div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--text4)">Cargando…</div>
   </div>
   <div id="kanbanContainer" class="kanban-wrap"></div>
 </div>
@@ -258,7 +258,7 @@ select.inp-sm{background:var(--bg3);border:1px solid var(--border);border-radius
 <div class="overlay" id="modalOverlay" style="display:none">
   <div class="modal">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
-      <span style="font-size:20px;font-weight:700;color:#f1f5f9">Nueva solicitud</span>
+      <span style="font-size:20px;font-weight:700;color:var(--text)">Nueva solicitud</span>
       <button style="background:none;border:none;color:#475569;cursor:pointer;font-size:22px" onclick="cerrarModal()">✕</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:18px">
@@ -478,8 +478,8 @@ function renderStats(){
     .filter(s=>currentUser?.rol==="gerente" || s.equipo===currentUser?.equipo||s.solicitanteId===currentUser?.id);
   document.getElementById("statsBar").innerHTML=STAGES.map(s=>{
     const c=sol.filter(x=>x.estado===s.id).length;
-    return `<div style="display:flex;align-items:center;gap:8px"><div style="width:8px;height:8px;border-radius:50%;background:${s.color}"></div><span style="font-size:12px;color:#334155">${s.label}</span><span style="font-size:15px;font-weight:800;color:${s.color}">${c}</span></div>`;
-  }).join("")+`<div style="margin-left:auto;display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:#1e293b">Total</span><span style="font-size:15px;font-weight:800;color:#f1f5f9">${sol.length}</span></div>`;
+    return `<div style="display:flex;align-items:center;gap:8px"><div style="width:8px;height:8px;border-radius:50%;background:${s.color}"></div><span style="font-size:12px;color:var(--text4)">${s.label}</span><span style="font-size:15px;font-weight:800;color:${s.color}">${c}</span></div>`;
+  }).join("")+`<div style="margin-left:auto;display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:#1e293b">Total</span><span style="font-size:15px;font-weight:800;color:var(--text)">${sol.length}</span></div>`;
 }
 
 let vistaActual="kanban";
@@ -525,7 +525,7 @@ function cardHTML(s){
     onmouseenter="this.style.boxShadow='0 4px 20px ${stage.color}18';this.style.borderColor='${stage.color}'"
     onmouseleave="this.style.boxShadow='none';this.style.borderColor='${stage.color}'">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
-      <div style="font-size:14px;font-weight:700;color:#f1f5f9;line-height:1.3;flex:1;padding-right:8px">${s.titulo}</div>
+      <div style="font-size:14px;font-weight:700;color:var(--text);line-height:1.3;flex:1;padding-right:8px">${s.titulo}</div>
       ${badgePrio(s.prioridad)}</div>
     <div style="font-size:12px;color:#475569;margin-bottom:10px">${s.equipo||""} · ${s.solicitante}</div>
     ${s.descripcion?`<div style="font-size:12px;color:#64748b;line-height:1.5;margin-bottom:10px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${s.descripcion}</div>`:""}
@@ -535,7 +535,7 @@ function cardHTML(s){
         ${s.comentarios?.length?`<span style="font-size:11px;color:#6366f1">💬${s.comentarios.length}</span>`:""}
       </div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <span style="font-size:10px;color:#334155">📅 ${fecha}</span>
+        <span style="font-size:10px;color:var(--text4)">📅 ${fecha}</span>
         ${ultimoCambio?`<span style="font-size:10px;color:#6366f1">🔄 ${ultimoCambio}</span>`:""}
         ${diasCiclo!==null?`<span style="font-size:10px;color:#10b981">⚡ Ciclo: ${diasCiclo}d</span>`:""}
       </div>
@@ -578,16 +578,16 @@ function detalleInnerHTML(s){
   return `
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px">
       <div style="flex:1;padding-right:16px">
-        <div style="font-size:18px;font-weight:700;color:#f1f5f9;line-height:1.3;margin-bottom:10px">${s.titulo}</div>
+        <div style="font-size:18px;font-weight:700;color:var(--text);line-height:1.3;margin-bottom:10px">${s.titulo}</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">${badgeEstado(s.estado)} ${badgePrio(s.prioridad)}</div>
       </div>
       <button style="background:none;border:none;color:#475569;cursor:pointer;font-size:22px" onclick="document.getElementById('detalleOverlay').style.display='none'">✕</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:14px">
-      <div style="display:flex;gap:12px"><span style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;min-width:130px">Solicitante</span><span style="font-size:13px;color:#94a3b8">${s.solicitante}</span></div>
-      <div style="display:flex;gap:12px"><span style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;min-width:130px">Equipo</span><span style="font-size:13px;color:#94a3b8">${s.equipo||"—"}</span></div>
-      <div style="display:flex;gap:12px"><span style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;min-width:130px">Fecha</span><span style="font-size:13px;color:#94a3b8">${fecha}</span></div>
-      ${s.descripcion?`<div><div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#334155;margin-bottom:6px">Detalle</div><div style="font-size:13px;color:#94a3b8;line-height:1.6;background:#080e19;border-radius:8px;padding:12px 14px;border:1px solid #0f172a">${s.descripcion}</div></div>`:""}
+      <div style="display:flex;gap:12px"><span style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;min-width:130px">Solicitante</span><span style="font-size:13px;color:var(--text2)">${s.solicitante}</span></div>
+      <div style="display:flex;gap:12px"><span style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;min-width:130px">Equipo</span><span style="font-size:13px;color:var(--text2)">${s.equipo||"—"}</span></div>
+      <div style="display:flex;gap:12px"><span style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;min-width:130px">Fecha</span><span style="font-size:13px;color:var(--text2)">${fecha}</span></div>
+      ${s.descripcion?`<div><div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#334155;margin-bottom:6px">Detalle</div><div style="font-size:13px;color:#94a3b8;line-height:1.6;background:var(--bg2);border-radius:8px;padding:12px 14px;border:1px solid #0f172a">${s.descripcion}</div></div>`:""}
       ${s.comentarios?.length?`<div><div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#334155;margin-bottom:8px">Comentarios</div><div style="display:flex;flex-direction:column;gap:8px">${s.comentarios.map(c=>`<div class="comment-box"><div style="font-size:11px;color:#6366f1;font-weight:700;margin-bottom:4px">💬 ${new Date(c.fecha).toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"})}</div><div style="font-size:13px;color:#94a3b8;line-height:1.5">${c.texto}</div></div>`).join("")}</div></div>`:""}
     </div>`;
 }
