@@ -237,6 +237,14 @@ select.inp-sm{background:var(--bg3);border:1px solid var(--border);border-radius
         <option value="produccion">En Producción</option>
         <option value="rechazado">Rechazado</option>
       </select>
+      <select id="filtroSector" class="inp-sm" onchange="renderCards()" style="display:none">
+        <option value="todos">Todos los sectores</option>
+        <option value="Almacenes y Logística">Almacenes y Logística</option>
+        <option value="Gestión de Materiales">Gestión de Materiales</option>
+        <option value="Logística y Transporte">Logística y Transporte</option>
+        <option value="Venta de Materiales">Venta de Materiales</option>
+        <option value="Catalogación">Catalogación</option>
+      </select>
       <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#475569;cursor:pointer">
         <input type="checkbox" id="soloMias" onchange="renderCards()"/> Solo mis solicitudes
       </label>
@@ -445,6 +453,9 @@ function enterApp(){
   const initials=currentUser.nombre.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
   document.getElementById("userAvatar").textContent=initials;
   document.getElementById("userName").textContent=currentUser.nombre;
+  // Mostrar filtro de sector solo a gerentes
+  const filtroSector=document.getElementById("filtroSector");
+  if(filtroSector) filtroSector.style.display=currentUser.rol==="gerente"?"":"none";
   loadData();
 }
 
@@ -454,7 +465,17 @@ function loadData(){
     window[cb]=d=>{
       if(d&&d.nextId!==undefined){
         allData=d;
-        if(currentUser){const f=(allData.usuarios||[]).find(u=>u.id===currentUser.id);if(f)currentUser=f;}
+        if(currentUser){
+          const f=(allData.usuarios||[]).find(u=>u.id===currentUser.id);
+          if(f){
+            currentUser=f;
+            // Actualizar cookie con datos frescos (puede haber cambiado el rol)
+            try{document.cookie="of_user="+encodeURIComponent(JSON.stringify(f))+";path=/;max-age=86400";}catch(e){}
+            // Mostrar/ocultar filtro sector según rol actualizado
+            const fs=document.getElementById("filtroSector");
+            if(fs) fs.style.display=f.rol==="gerente"?"":"none";
+          }
+        }
       }
       delete window[cb];sc.remove();renderStats();renderCards();res();
     };
@@ -495,9 +516,11 @@ function setVista(v){
 function getSol(){
   const est=document.getElementById("filtroEstado").value;
   const soloMias=document.getElementById("soloMias").checked;
+  const sector=document.getElementById("filtroSector")?.value||"todos";
   return (allData.solicitudes||[])
     .filter(s=>currentUser?.rol==="gerente" || s.equipo===currentUser?.equipo||s.solicitanteId===currentUser?.id)
     .filter(s=>est==="todos"||s.estado===est)
+    .filter(s=>sector==="todos"||s.equipo===sector)
     .filter(s=>!soloMias||s.solicitanteId===currentUser?.id)
     .sort((a,b)=>{
     const po={alta:0,media:1,baja:2};
