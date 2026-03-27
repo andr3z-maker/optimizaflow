@@ -252,6 +252,7 @@ select.inp-sm{background:var(--bg3);border:1px solid var(--border);border-radius
       <div class="btn-vista" style="margin-left:auto">
         <button id="btnGrid" onclick="setVista('grid')">▦ Grilla</button>
         <button id="btnKanban" class="active" onclick="setVista('kanban')">☰ Kanban</button>
+        <button id="btnGantt" onclick="setVista('gantt')">📅 Gantt</button>
       </div>
       <span id="countLabel" style="font-size:12px;color:var(--text4)"></span>
     </div>
@@ -260,6 +261,7 @@ select.inp-sm{background:var(--bg3);border:1px solid var(--border);border-radius
     <div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--text4)">Cargando…</div>
   </div>
   <div id="kanbanContainer" class="kanban-wrap"></div>
+  <div id="ganttContainer" style="display:none;max-width:1300px;margin:0 auto;padding:24px 28px"></div>
 </div>
 
 <!-- Modal nueva solicitud -->
@@ -508,9 +510,12 @@ function setVista(v){
   vistaActual=v;
   document.getElementById("btnGrid").className=v==="grid"?"active":"";
   document.getElementById("btnKanban").className=v==="kanban"?"active":"";
+  document.getElementById("btnGantt").className=v==="gantt"?"active":"";
   document.getElementById("gridContainer").style.display=v==="grid"?"":"none";
   document.getElementById("kanbanContainer").style.display=v==="kanban"?"flex":"none";
-  renderCards();
+  document.getElementById("ganttContainer").style.display=v==="gantt"?"block":"none";
+  if(v==="gantt") renderGanttEquipo();
+  else renderCards();
 }
 
 function getSol(){
@@ -666,6 +671,71 @@ function showToast(msg,type){
   const t=document.getElementById("toast");t.textContent=msg;t.className="toast "+type;t.style.display="block";
   setTimeout(()=>t.style.display="none",3500);
 }
+
+// ── GANTT EQUIPO ──────────────────────────────────────────────────────────────
+function renderGanttEquipo(){
+  const sol=(allData.solicitudes||[])
+    .filter(s=>currentUser?.rol==="gerente"||s.equipo===currentUser?.equipo||s.solicitanteId===currentUser?.id)
+    .filter(s=>s.fechaInicioEstimada&&s.diasEstimados)
+    .sort((a,b)=>new Date(a.fechaInicioEstimada)-new Date(b.fechaInicioEstimada));
+  const container=document.getElementById("ganttContainer");
+  if(!sol.length){
+    container.innerHTML=`<div style="text-align:center;padding:60px;color:var(--text4)"><div style="font-size:40px;margin-bottom:12px">📅</div><div style="font-size:14px;color:var(--text3)">No hay proyectos con planificación cargada aún.</div></div>`;
+    return;
+  }
+  const colores={pendiente:"#94a3b8",desarrollo:"#f59e0b",prueba:"#6366f1",produccion:"#10b981",rechazado:"#ef4444"};
+  const fechaMin=new Date(sol[0].fechaInicioEstimada);
+  const fechaMax=new Date(Math.max(...sol.map(s=>new Date(s.fechaInicioEstimada).getTime()+(s.diasEstimados*86400000))));
+  const totalDias=Math.ceil((fechaMax-fechaMin)/86400000)+7;
+  const colW=Math.max(22,Math.min(42,Math.floor((window.innerWidth-260)/totalDias)));
+  const hoy=new Date();hoy.setHours(0,0,0,0);
+  const dias=Array.from({length:totalDias},(_,i)=>{const d=new Date(fechaMin);d.setDate(d.getDate()+i);return d;});
+  const mesesGrupo=[];
+  dias.forEach(d=>{
+    const m=d.toLocaleDateString("es-AR",{month:"short",year:"2-digit"});
+    if(!mesesGrupo.length||mesesGrupo[mesesGrupo.length-1].label!==m)mesesGrupo.push({label:m,count:1});
+    else mesesGrupo[mesesGrupo.length-1].count++;
+  });
+  const headerMeses=mesesGrupo.map(m=>`<th colspan="${m.count}" style="padding:6px 4px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);background:var(--bg2);white-space:nowrap;text-align:center">${m.label}</th>`).join("");
+  const headerDias=dias.map(d=>{
+    const esHoy=d.toDateString()===hoy.toDateString();
+    return `<th style="min-width:${colW}px;width:${colW}px;padding:3px 1px;font-size:9px;text-align:center;color:${esHoy?"#6366f1":"var(--text4)"};font-weight:${esHoy?"800":"400"};background:${esHoy?"#6366f115":"var(--bg2)"}">${d.getDate()}</th>`;
+  }).join("");
+  const rows=sol.map(s=>{
+    const inicio=new Date(s.fechaInicioEstimada);
+    const off=Math.round((inicio-fechaMin)/86400000);
+    const color=colores[s.estado]||"#94a3b8";
+    const stage=STAGES.find(x=>x.id===s.estado)||STAGES[0];
+    const fechaFin=new Date(inicio.getTime()+s.diasEstimados*86400000).toLocaleDateString("es-AR",{day:"2-digit",month:"short"});
+    const cells=dias.map((_,i)=>{
+      const inBar=i>=off&&i<off+s.diasEstimados;
+      const isFirst=i===off,isLast=i===off+s.diasEstimados-1;
+      const esHoy=dias[i].toDateString()===hoy.toDateString();
+      return `<td style="padding:2px 0;${esHoy?"border-left:2px solid #6366f1;":""}"><div style="height:26px;border-radius:${isFirst?"8px 0 0 8px":isLast?"0 8px 8px 0":"0"};background:${inBar?color+"cc":"transparent"};${isFirst?"margin-left:2px":""}${isLast?"margin-right:2px":""}"></div></td>`;
+    }).join("");
+    return `<tr style="border-bottom:1px solid var(--border2)">
+      <td style="padding:8px 14px;min-width:190px;max-width:190px;position:sticky;left:0;background:var(--bg3);z-index:2;border-right:1px solid var(--border)">
+        <div style="font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${s.titulo}">${s.titulo}</div>
+        <div style="display:flex;gap:6px;margin-top:3px;align-items:center">
+          <span style="font-size:9px;color:${color};font-weight:700">${stage.label}</span>
+          <span style="font-size:9px;color:var(--text4)">${s.diasEstimados}d · hasta ${fechaFin}</span>
+        </div>
+      </td>${cells}
+    </tr>`;
+  }).join("");
+  container.innerHTML=`
+    <div style="font-size:11px;color:var(--text4);margin-bottom:10px">${sol.length} proyecto${sol.length!==1?"s":""} con planificación · <span style="color:#6366f1">│ hoy</span></div>
+    <div style="overflow-x:auto;border:1px solid var(--border);border-radius:12px">
+      <table style="border-collapse:collapse;font-family:inherit;background:var(--bg3)">
+        <thead>
+          <tr><th style="position:sticky;left:0;background:var(--bg2);z-index:3;min-width:190px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:8px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">Proyecto</th>${headerMeses}</tr>
+          <tr><th style="position:sticky;left:0;background:var(--bg2);z-index:3;border-right:1px solid var(--border);border-bottom:2px solid var(--border)"></th>${headerDias}</tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
 let saved=null;try{const m=document.cookie.match(/(?:^|;)\s*of_user=([^;]*)/);saved=m?decodeURIComponent(m[1]):null;}catch(e){}
 if(saved){try{currentUser=JSON.parse(saved);enterApp();}catch(e){}}
 setInterval(()=>{if(currentUser)loadData();},30000);

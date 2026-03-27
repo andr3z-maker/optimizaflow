@@ -132,6 +132,7 @@ input.inp-sm::placeholder{color:var(--text4)}
           Usuarios<span class="badge" id="pendingBadge"></span>
         </button>
         <button class="nav-tab" id="tabDashboard" onclick="setSection('dashboard')">📊 Dashboard</button>
+        <button class="nav-tab" id="tabGantt" onclick="setSection('gantt')">📅 Gantt</button>
       </div>
       <div class="btn-view" id="vistaToggle">
         <button id="btnKanban" onclick="setVista(true)"  style="background:linear-gradient(135deg,#ef4444,#f59e0b);color:white">Tablero</button>
@@ -240,6 +241,24 @@ input.inp-sm::placeholder{color:var(--text4)}
 <!-- Modal detalle solicitud (vista) -->
 <div class="overlay" id="detalleOverlay" style="display:none;align-items:center;justify-content:center">
   <div class="modal" id="detalleContent" style="max-height:85vh;overflow-y:auto"></div>
+</div>
+
+<!-- GANTT -->
+<div id="sectionGantt" style="display:none">
+  <div style="max-width:1300px;margin:0 auto;padding:28px 20px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+      <div style="font-size:14px;font-weight:700;color:var(--text)">Diagrama de Gantt — Planificación de proyectos</div>
+      <select id="ganttFiltroSector" class="inp-sm" onchange="renderGantt()">
+        <option value="todos">Todos los sectores</option>
+        <option>Almacenes y Logística</option>
+        <option>Gestión de Materiales</option>
+        <option>Logística y Transporte</option>
+        <option>Venta de Materiales</option>
+        <option>Catalogación</option>
+      </select>
+    </div>
+    <div id="ganttWrap"></div>
+  </div>
 </div>
 
 
@@ -369,12 +388,15 @@ function setSection(s){
   document.getElementById("sectionSolicitudes").style.display=s==="solicitudes"?"block":"none";
   document.getElementById("sectionUsuarios").style.display=s==="usuarios"?"block":"none";
   document.getElementById("sectionDashboard").style.display=s==="dashboard"?"block":"none";
+  document.getElementById("sectionGantt").style.display=s==="gantt"?"block":"none";
   document.getElementById("vistaToggle").style.display=s==="solicitudes"?"flex":"none";
   document.getElementById("tabSolicitudes").className="nav-tab"+(s==="solicitudes"?" active":"");
   document.getElementById("tabUsuarios").className="nav-tab"+(s==="usuarios"?" active":"");
   document.getElementById("tabDashboard").className="nav-tab"+(s==="dashboard"?" active":"");
+  document.getElementById("tabGantt").className="nav-tab"+(s==="gantt"?" active":"");
   if(s==="usuarios")renderUsers();
   if(s==="dashboard")renderDashboard();
+  if(s==="gantt")renderGantt();
 }
 
 // ── USUARIOS ─────────────────────────────────────────────────────────────────
@@ -851,6 +873,78 @@ function renderDashboard(){
     datasets:[{data:[sol.filter(s=>s.prioridad==="alta").length,sol.filter(s=>s.prioridad==="media").length,sol.filter(s=>s.prioridad==="baja").length],
     backgroundColor:["#ef4444cc","#f59e0bcc","#10b981cc"],borderColor:"#0d1117",borderWidth:2}]},
     options:{plugins:{legend:{labels:{color:"#94a3b8",font:{size:11}}}},cutout:"65%"}});
+}
+
+// ── GANTT ─────────────────────────────────────────────────────────────────────
+function renderGantt(){
+  const sector=document.getElementById("ganttFiltroSector")?.value||"todos";
+  const sol=(allData.solicitudes||[])
+    .filter(s=>s.fechaInicioEstimada&&s.diasEstimados)
+    .filter(s=>sector==="todos"||s.equipo===sector)
+    .sort((a,b)=>new Date(a.fechaInicioEstimada)-new Date(b.fechaInicioEstimada));
+  const container=document.getElementById("ganttWrap");
+  if(!sol.length){
+    container.innerHTML=`<div style="text-align:center;padding:60px;color:var(--text4)"><div style="font-size:40px;margin-bottom:12px">📅</div><div style="font-size:14px;color:var(--text3)">No hay proyectos con fecha de inicio y días estimados cargados.</div><div style="font-size:12px;margin-top:8px">Editá una solicitud desde Gestionar para agregar esos datos.</div></div>`;
+    return;
+  }
+  const colores={pendiente:"#94a3b8",desarrollo:"#f59e0b",prueba:"#6366f1",produccion:"#10b981",rechazado:"#ef4444"};
+  const fechaMin=new Date(sol[0].fechaInicioEstimada);
+  const fechaMax=new Date(Math.max(...sol.map(s=>new Date(s.fechaInicioEstimada).getTime()+(s.diasEstimados*86400000))));
+  const totalDias=Math.ceil((fechaMax-fechaMin)/86400000)+7;
+  const colW=Math.max(24,Math.min(44,Math.floor((window.innerWidth-280)/totalDias)));
+  const hoy=new Date();hoy.setHours(0,0,0,0);
+  const dias=Array.from({length:totalDias},(_,i)=>{const d=new Date(fechaMin);d.setDate(d.getDate()+i);return d;});
+  const mesesGrupo=[];
+  dias.forEach(d=>{
+    const m=d.toLocaleDateString("es-AR",{month:"short",year:"2-digit"});
+    if(!mesesGrupo.length||mesesGrupo[mesesGrupo.length-1].label!==m)mesesGrupo.push({label:m,count:1});
+    else mesesGrupo[mesesGrupo.length-1].count++;
+  });
+  const headerMeses=mesesGrupo.map(m=>`<th colspan="${m.count}" style="padding:6px 4px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);background:var(--bg2);white-space:nowrap;text-align:center">${m.label}</th>`).join("");
+  const headerDias=dias.map(d=>{
+    const esHoy=d.toDateString()===hoy.toDateString();
+    const finde=d.getDay()===0||d.getDay()===6;
+    return `<th style="min-width:${colW}px;width:${colW}px;padding:3px 1px;font-size:9px;text-align:center;color:${esHoy?"#6366f1":finde?"var(--text4)":"var(--text4)"};font-weight:${esHoy?"800":"400"};background:${esHoy?"#6366f115":"var(--bg2)"}">${d.getDate()}</th>`;
+  }).join("");
+  const rows=sol.map(s=>{
+    const inicio=new Date(s.fechaInicioEstimada);
+    const off=Math.round((inicio-fechaMin)/86400000);
+    const color=colores[s.estado]||"#94a3b8";
+    const stage=STAGES.find(x=>x.id===s.estado)||STAGES[0];
+    const prio=PRIOS.find(x=>x.id===s.prioridad)||PRIOS[1];
+    const fechaFin=new Date(inicio.getTime()+s.diasEstimados*86400000).toLocaleDateString("es-AR",{day:"2-digit",month:"short"});
+    const cells=dias.map((_,i)=>{
+      const inBar=i>=off&&i<off+s.diasEstimados;
+      const isFirst=i===off, isLast=i===off+s.diasEstimados-1;
+      const finde=dias[i].getDay()===0||dias[i].getDay()===6;
+      const esHoy=dias[i].toDateString()===hoy.toDateString();
+      return `<td style="padding:2px 0;${esHoy?"border-left:2px solid #6366f1;":""}background:${finde&&!inBar?"var(--bg2)":""}">
+        <div style="height:26px;border-radius:${isFirst?"8px 0 0 8px":isLast?"0 8px 8px 0":"0"};background:${inBar?color+"cc":"transparent"};${isFirst?"margin-left:2px":""}${isLast?"margin-right:2px":""}"></div>
+      </td>`;
+    }).join("");
+    return `<tr style="border-bottom:1px solid var(--border2)">
+      <td style="padding:8px 14px;min-width:200px;max-width:200px;position:sticky;left:0;background:var(--bg3);z-index:2;border-right:1px solid var(--border)">
+        <div style="font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${s.titulo}">${s.titulo}</div>
+        <div style="display:flex;gap:6px;margin-top:3px;align-items:center;flex-wrap:wrap">
+          <span style="font-size:9px;color:${color};font-weight:700">${stage.label}</span>
+          <span style="font-size:9px;color:${prio.color}">●${prio.label}</span>
+          <span style="font-size:9px;color:var(--text4)">${s.diasEstimados}d · hasta ${fechaFin}</span>
+        </div>
+      </td>
+      ${cells}
+    </tr>`;
+  }).join("");
+  container.innerHTML=`
+    <div style="font-size:11px;color:var(--text4);margin-bottom:10px">${sol.length} proyecto${sol.length!==1?"s":""} con planificación · <span style="color:#6366f1">│ hoy</span></div>
+    <div style="overflow-x:auto;border:1px solid var(--border);border-radius:12px">
+      <table style="border-collapse:collapse;font-family:inherit;background:var(--bg3)">
+        <thead>
+          <tr><th style="position:sticky;left:0;background:var(--bg2);z-index:3;min-width:200px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:8px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">Proyecto</th>${headerMeses}</tr>
+          <tr><th style="position:sticky;left:0;background:var(--bg2);z-index:3;border-right:1px solid var(--border);border-bottom:2px solid var(--border)"></th>${headerDias}</tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
 }
 </script>
 <!-- Modal cambiar sector -->
