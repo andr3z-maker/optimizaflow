@@ -118,26 +118,7 @@ input.inp-sm::placeholder{color:var(--text4)}
 </head>
 <body>
 
-<!-- LOGIN ADMIN -->
-<div id="adminLogin" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:20px">
-  <div style="background:var(--bg3);border:1px solid var(--border);border-radius:20px;width:100%;max-width:380px;padding:40px 36px;box-shadow:0 8px 40px var(--shadow)">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:32px;justify-content:center">
-      <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#ef4444,#f59e0b);display:flex;align-items:center;justify-content:center;font-size:20px">🔧</div>
-      <div>
-        <div style="font-size:20px;font-weight:800;background:linear-gradient(90deg,#ef4444,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent">OptimizaFlow</div>
-        <div style="font-size:11px;color:#ef444470;letter-spacing:.1em;text-transform:uppercase">Panel Administrador</div>
-      </div>
-    </div>
-    <label class="lbl">Contraseña de acceso</label>
-    <input id="adminPassInput" type="password" class="inp" placeholder="Ingresá la contraseña" style="margin-bottom:16px"
-      onkeydown="if(event.key==='Enter')checkAdminPass()"/>
-    <div id="adminPassErr" style="color:#ef4444;font-size:13px;margin-bottom:12px;display:none">Contraseña incorrecta.</div>
-    <button onclick="checkAdminPass()" style="width:100%;padding:11px;border-radius:8px;border:none;background:linear-gradient(135deg,#ef4444,#f59e0b);color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Ingresar</button>
-  </div>
-</div>
-
-<!-- APP ADMIN -->
-<div id="adminApp" style="display:none">
+<div class="header">
   <div class="header-inner">
     <div style="display:flex;align-items:center;gap:12px">
       <div class="logo-icon">🔧</div>
@@ -151,7 +132,6 @@ input.inp-sm::placeholder{color:var(--text4)}
           Usuarios<span class="badge" id="pendingBadge"></span>
         </button>
         <button class="nav-tab" id="tabDashboard" onclick="setSection('dashboard')">📊 Dashboard</button>
-        <button class="nav-tab" id="tabGantt" onclick="setSection('gantt')">📅 Gantt</button>
       </div>
       <div class="btn-view" id="vistaToggle">
         <button id="btnKanban" onclick="setVista(true)"  style="background:linear-gradient(135deg,#ef4444,#f59e0b);color:white">Tablero</button>
@@ -192,7 +172,6 @@ input.inp-sm::placeholder{color:var(--text4)}
         <option>Gestión de Materiales</option>
         <option>Logística y Transporte</option>
         <option>Venta de Materiales</option>
-        <option>Catalogación</option>
       </select>
       <button onclick="limpiarFiltros()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:#475569;cursor:pointer;font-size:12px;font-family:inherit">Limpiar ✕</button>
       <span id="countLabel" style="margin-left:auto;font-size:12px;color:var(--text4)"></span>
@@ -258,25 +237,40 @@ input.inp-sm::placeholder{color:var(--text4)}
   </div>
 </div>
 
-<!-- GANTT -->
-<div id="sectionGantt" style="display:none">
-  <div style="max-width:1300px;margin:0 auto;padding:28px 20px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-      <div style="font-size:14px;font-weight:700;color:var(--text)">Diagrama de Gantt — Planificación de proyectos</div>
-      <select id="ganttFiltroSector" class="inp-sm" onchange="renderGantt()">
-        <option value="todos">Todos los sectores</option>
-        <option>Almacenes y Logística</option>
-        <option>Gestión de Materiales</option>
-        <option>Logística y Transporte</option>
-        <option>Venta de Materiales</option>
-        <option>Catalogación</option>
-      </select>
+<!-- Modal detalle solicitud (vista) -->
+<div class="overlay" id="detalleOverlay" style="display:none;align-items:center;justify-content:center">
+  <div class="modal" id="detalleContent" style="max-height:85vh;overflow-y:auto"></div>
+</div>
+
+
+<!-- DASHBOARD -->
+<div id="sectionDashboard" style="display:none">
+  <div style="max-width:1100px;margin:0 auto;padding:28px 20px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:32px" id="kpiCards"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px">
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:22px">
+        <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#475569;margin-bottom:16px">Solicitudes por estado</div>
+        <canvas id="chartEstados" height="220"></canvas>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:22px">
+        <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#475569;margin-bottom:16px">Solicitudes por sector</div>
+        <canvas id="chartSectores" height="220"></canvas>
+      </div>
     </div>
-    <div id="ganttContainer" style="overflow-x:auto"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:22px">
+        <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#475569;margin-bottom:16px">Tiempo promedio por estado (días)</div>
+        <canvas id="chartTiempos" height="220"></canvas>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:22px">
+        <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#475569;margin-bottom:16px">Solicitudes por prioridad</div>
+        <canvas id="chartPrioridad" height="220"></canvas>
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- Modal detalle solicitud (vista) -->
+<!-- Modal detalle solicitud -->
 <div class="overlay" id="detalleOverlay" style="display:none;align-items:center;justify-content:center">
   <div class="modal" id="detalleContent" style="max-height:85vh;overflow-y:auto"></div>
 </div>
@@ -375,15 +369,12 @@ function setSection(s){
   document.getElementById("sectionSolicitudes").style.display=s==="solicitudes"?"block":"none";
   document.getElementById("sectionUsuarios").style.display=s==="usuarios"?"block":"none";
   document.getElementById("sectionDashboard").style.display=s==="dashboard"?"block":"none";
-  document.getElementById("sectionGantt").style.display=s==="gantt"?"block":"none";
   document.getElementById("vistaToggle").style.display=s==="solicitudes"?"flex":"none";
   document.getElementById("tabSolicitudes").className="nav-tab"+(s==="solicitudes"?" active":"");
   document.getElementById("tabUsuarios").className="nav-tab"+(s==="usuarios"?" active":"");
   document.getElementById("tabDashboard").className="nav-tab"+(s==="dashboard"?" active":"");
-  document.getElementById("tabGantt").className="nav-tab"+(s==="gantt"?" active":"");
   if(s==="usuarios")renderUsers();
   if(s==="dashboard")renderDashboard();
-  if(s==="gantt")renderGantt();
 }
 
 // ── USUARIOS ─────────────────────────────────────────────────────────────────
@@ -562,6 +553,8 @@ function cardHTML(s){
         <span style="font-size:10px;color:var(--text4)">📅 Creada: ${fechaCreacion}</span>
         ${ultimoCambio?`<span style="font-size:10px;color:#6366f1">🔄 Último cambio: ${ultimoCambio}</span>`:""}
         ${diasCiclo!==null?`<span style="font-size:10px;color:#10b981">⚡ Ciclo: ${diasCiclo}d</span>`:""}
+        ${s.fechaInicioEstimada?`<span style="font-size:10px;color:#8b5cf6">🗓 Inicio: ${new Date(s.fechaInicioEstimada).toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric"})}</span>`:""}
+        ${s.fechaInicioEstimada&&s.diasEstimados?`<span style="font-size:10px;color:#8b5cf6">🏁 Fin est: ${new Date(new Date(s.fechaInicioEstimada).getTime()+s.diasEstimados*86400000).toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric"})}</span>`:""}
       </div>
     </div>
   </div>`;
@@ -612,6 +605,8 @@ function renderLista(sol){
         <span>📅 ${fechaCreacion}</span>
         ${ultimoCambio?`<span style="color:#6366f1">🔄 ${ultimoCambio}</span>`:""}
         ${diasCiclo!==null?`<span style="color:#10b981">⚡ ${diasCiclo}d ciclo</span>`:""}
+        ${s.fechaInicioEstimada?`<span style="color:#8b5cf6">🗓 ${new Date(s.fechaInicioEstimada).toLocaleDateString("es-AR",{day:"2-digit",month:"short"})}</span>`:""}
+        ${s.fechaInicioEstimada&&s.diasEstimados?`<span style="color:#8b5cf6">🏁 ${new Date(new Date(s.fechaInicioEstimada).getTime()+s.diasEstimados*86400000).toLocaleDateString("es-AR",{day:"2-digit",month:"short"})}</span>`:""}
       </div>
       <div style="display:flex;gap:6px">
         ${btnGestionar}
@@ -656,12 +651,6 @@ function renderAdminModal(){
       ${s.comentarios?.length?`<div><label class="lbl">Comentarios anteriores</label><div style="display:flex;flex-direction:column;gap:8px">${s.comentarios.map(c=>`<div class="comment-box"><div style="font-size:11px;color:#6366f1;font-weight:700;margin-bottom:4px">${new Date(c.fecha).toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"})}</div><div style="font-size:13px;color:#94a3b8;line-height:1.5">${c.texto}</div></div>`).join("")}</div></div>`:""}
       <div><label class="lbl">Agregar comentario</label>
         <textarea id="nuevoComentario" class="inp" placeholder="Actualizaciones, próximos pasos…"></textarea></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div><label class="lbl">Fecha inicio estimada</label>
-          <input type="date" id="fechaInicioEstimada" class="inp" value="${s.fechaInicioEstimada||''}"/></div>
-        <div><label class="lbl">Días estimados</label>
-          <input type="number" id="diasEstimados" class="inp" min="1" placeholder="Ej: 14" value="${s.diasEstimados||''}"/></div>
-      </div>
     </div>
     <div style="display:flex;gap:12px;margin-top:28px;justify-content:flex-end">
       <button style="padding:10px 24px;border-radius:8px;border:1px solid var(--border);background:transparent;color:#94a3b8;cursor:pointer;font-size:14px;font-weight:600;font-family:inherit"
@@ -695,9 +684,7 @@ async function guardarAdmin(){
   let solModificada=null;
   allData.solicitudes=(allData.solicitudes||[]).map(s=>{
     if(s.id!==modalSol.id)return s;
-    const u={...s,estado:modalEstado,prioridad:modalPrio,equipo:document.getElementById('adminEquipo').value,
-      fechaInicioEstimada:document.getElementById('fechaInicioEstimada')?.value||s.fechaInicioEstimada||null,
-      diasEstimados:parseInt(document.getElementById('diasEstimados')?.value)||s.diasEstimados||null};
+    const u={...s,estado:modalEstado,prioridad:modalPrio,equipo:document.getElementById('adminEquipo').value};
     if(modalEstado!==s.estado){
       const hist=[...(s.historialEstados||[{estado:s.estado,desde:s.fechaCreacion}])];
       hist.push({estado:modalEstado,desde:new Date().toISOString()});
@@ -724,42 +711,8 @@ function showToast(msg,type){
   const t=document.getElementById("toast");t.textContent=msg;t.className="toast "+type;t.style.display="block";
   setTimeout(()=>t.style.display="none",3500);
 }
-// ── ADMIN AUTH ───────────────────────────────────────────────────────────────
-const ADMIN_PASS_HASH="a9363e93a3531f2aced8a144625085ccdb90316c03bc9b2b2bd2f18a13f0f15b"; // "password" — cambiar
-async function hashStr(s){
-  const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
-}
-async function checkAdminPass(){
-  const val=document.getElementById("adminPassInput").value;
-  const h=await hashStr(val);
-  if(h===ADMIN_PASS_HASH){
-    document.getElementById("adminLogin").style.display="none";
-    document.getElementById("adminApp").style.display="block";
-    try{document.cookie="of_admin=1;path=/;max-age=86400";}catch(e){}
-    loadData();
-    setInterval(loadData,20000);
-  } else {
-    document.getElementById("adminPassErr").style.display="block";
-    document.getElementById("adminPassInput").value="";
-    document.getElementById("adminPassInput").focus();
-  }
-}
-// Check if already authenticated
-(function(){
-  try{
-    const m=document.cookie.match(/(?:^|;)\s*of_admin=([^;]*)/);
-    if(m&&m[1]==="1"){
-      document.getElementById("adminLogin").style.display="none";
-      document.getElementById("adminApp").style.display="block";
-      loadData();
-      setInterval(loadData,20000);
-      return;
-    }
-  }catch(e){}
-  // Apply theme to login screen too
-  applyTheme(false);
-})();
+loadData();
+setInterval(loadData,20000);
 
 // ── DETALLE SOLICITUD ────────────────────────────────────────────────────────
 function verDetalle(id){
@@ -899,115 +852,6 @@ function renderDashboard(){
     backgroundColor:["#ef4444cc","#f59e0bcc","#10b981cc"],borderColor:"#0d1117",borderWidth:2}]},
     options:{plugins:{legend:{labels:{color:"#94a3b8",font:{size:11}}}},cutout:"65%"}});
 }
-
-// ── GANTT ─────────────────────────────────────────────────────────────────────
-function renderGantt(){
-  const sector=document.getElementById("ganttFiltroSector")?.value||"todos";
-  const sol=(allData.solicitudes||[])
-    .filter(s=>s.fechaInicioEstimada && s.diasEstimados)
-    .filter(s=>sector==="todos"||s.equipo===sector)
-    .sort((a,b)=>new Date(a.fechaInicioEstimada)-new Date(b.fechaInicioEstimada));
-
-  const container=document.getElementById("ganttContainer");
-  if(!sol.length){
-    container.innerHTML=`<div style="text-align:center;padding:60px;color:var(--text4)">
-      <div style="font-size:40px;margin-bottom:12px">📅</div>
-      <div style="font-size:14px">No hay proyectos con fecha de inicio y días estimados cargados.</div>
-      <div style="font-size:12px;margin-top:8px;color:var(--text4)">Editá una solicitud desde el panel de gestión para agregar esos datos.</div>
-    </div>`;
-    return;
-  }
-
-  // Calculate date range
-  const fechaMin=new Date(sol[0].fechaInicioEstimada);
-  const fechaMax=new Date(Math.max(...sol.map(s=>new Date(s.fechaInicioEstimada).getTime()+(s.diasEstimados*86400000))));
-  const totalDias=Math.ceil((fechaMax-fechaMin)/86400000)+5;
-  const colW=Math.max(28, Math.min(48, Math.floor((window.innerWidth-320)/totalDias)));
-
-  // Build header dates
-  const colores={pendiente:"#94a3b8",desarrollo:"#f59e0b",prueba:"#6366f1",produccion:"#10b981",rechazado:"#ef4444"};
-  const hoy=new Date(); hoy.setHours(0,0,0,0);
-
-  // Month header
-  let meses="";
-  let d=new Date(fechaMin);
-  let mesActual="", mesStart=0, mesCount=0;
-  const dias=[];
-  for(let i=0;i<totalDias;i++){
-    const nd=new Date(fechaMin); nd.setDate(nd.getDate()+i);
-    const mes=nd.toLocaleDateString("es-AR",{month:"short",year:"2-digit"});
-    const esHoy=nd.toDateString()===hoy.toDateString();
-    dias.push({nd,mes,esHoy});
-  }
-
-  // Group by month
-  const mesesGrupo=[];
-  dias.forEach((d,i)=>{
-    if(!mesesGrupo.length||mesesGrupo[mesesGrupo.length-1].label!==d.mes)
-      mesesGrupo.push({label:d.mes,count:1});
-    else mesesGrupo[mesesGrupo.length-1].count++;
-  });
-
-  const headerMeses=mesesGrupo.map(m=>`<th colspan="${m.count}" style="padding:6px 4px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border);background:var(--bg2);white-space:nowrap">${m.label}</th>`).join("");
-  const headerDias=dias.map(d=>`<th style="min-width:${colW}px;width:${colW}px;padding:3px 1px;font-size:9px;color:${d.esHoy?"#6366f1":d.nd.getDay()===0||d.nd.getDay()===6?"var(--text4)":"var(--text4)"};font-weight:${d.esHoy?"800":"400"};background:${d.esHoy?"#6366f110":"var(--bg2)"}">${d.nd.getDate()}</th>`).join("");
-
-  const rows=sol.map(s=>{
-    const inicio=new Date(s.fechaInicioEstimada);
-    const offsetDias=Math.round((inicio-fechaMin)/86400000);
-    const color=colores[s.estado]||"#94a3b8";
-    const stage=STAGES.find(x=>x.id===s.estado)||STAGES[0];
-    const prio=PRIOS.find(x=>x.id===s.prioridad)||PRIOS[1];
-
-    const cells=dias.map((d,i)=>{
-      const inBar=i>=offsetDias&&i<offsetDias+s.diasEstimados;
-      const isFirst=i===offsetDias;
-      const isLast=i===offsetDias+s.diasEstimados-1;
-      const bg=inBar?color+"cc":"transparent";
-      const br=isFirst?"8px 0 0 8px":isLast?"0 8px 8px 0":"0";
-      const today=d.esHoy?"border-top:2px solid #6366f1;border-bottom:2px solid #6366f1;":"";
-      const weekend=d.nd.getDay()===0||d.nd.getDay()===6?"background:#0002;":"";
-      return `<td style="padding:2px 0;${today}${inBar?"":""}">
-        ${inBar?`<div style="height:24px;background:${bg};border-radius:${br};${isFirst?"margin-left:2px":""}${isLast?"margin-right:2px":""}"></div>`:`<div style="height:24px;${weekend}border-radius:2px"></div>`}
-      </td>`;
-    }).join("");
-
-    return `<tr style="border-bottom:1px solid var(--border2)">
-      <td style="padding:8px 14px;min-width:220px;max-width:220px;position:sticky;left:0;background:var(--bg3);z-index:2;border-right:1px solid var(--border)">
-        <div style="font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.titulo}</div>
-        <div style="display:flex;gap:6px;margin-top:3px;align-items:center">
-          <span style="font-size:9px;color:${color};font-weight:700;text-transform:uppercase">${stage.label}</span>
-          <span style="font-size:9px;color:${prio.color}">● ${prio.label}</span>
-          <span style="font-size:9px;color:var(--text4)">${s.diasEstimados}d</span>
-        </div>
-      </td>
-      ${cells}
-    </tr>`;
-  }).join("");
-
-  // Today line marker
-  const todayOffset=Math.round((hoy-fechaMin)/86400000);
-
-  container.innerHTML=`
-    <div style="font-size:11px;color:var(--text4);margin-bottom:10px">
-      Mostrando <strong style="color:var(--text)">${sol.length}</strong> proyecto${sol.length!==1?"s":""} con planificación cargada.
-      <span style="margin-left:12px;color:#6366f1">│ Hoy</span>
-    </div>
-    <div style="overflow-x:auto;border:1px solid var(--border);border-radius:12px">
-      <table style="border-collapse:collapse;font-family:inherit">
-        <thead>
-          <tr>
-            <th style="position:sticky;left:0;background:var(--bg2);z-index:3;min-width:220px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:8px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">Proyecto</th>
-            ${headerMeses}
-          </tr>
-          <tr>
-            <th style="position:sticky;left:0;background:var(--bg2);z-index:3;border-right:1px solid var(--border);border-bottom:2px solid var(--border)"></th>
-            ${headerDias}
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>`;
-}
 </script>
 <!-- Modal cambiar sector -->
 <div id="sectorOverlay" class="overlay" style="display:none;align-items:center;justify-content:center">
@@ -1055,6 +899,5 @@ async function guardarSector(){
   cerrarSectorModal();
 }
 </script>
-</div><!-- /adminApp -->
 </body>
 </html>

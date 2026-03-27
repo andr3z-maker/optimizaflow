@@ -252,7 +252,6 @@ select.inp-sm{background:var(--bg3);border:1px solid var(--border);border-radius
       <div class="btn-vista" style="margin-left:auto">
         <button id="btnGrid" onclick="setVista('grid')">▦ Grilla</button>
         <button id="btnKanban" class="active" onclick="setVista('kanban')">☰ Kanban</button>
-        <button id="btnGantt" onclick="setVista('gantt')">📅 Gantt</button>
       </div>
       <span id="countLabel" style="font-size:12px;color:var(--text4)"></span>
     </div>
@@ -261,7 +260,6 @@ select.inp-sm{background:var(--bg3);border:1px solid var(--border);border-radius
     <div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--text4)">Cargando…</div>
   </div>
   <div id="kanbanContainer" class="kanban-wrap"></div>
-  <div id="ganttContainer" style="display:none;max-width:1300px;margin:0 auto;padding:24px 28px;overflow-x:auto"></div>
 </div>
 
 <!-- Modal nueva solicitud -->
@@ -510,12 +508,9 @@ function setVista(v){
   vistaActual=v;
   document.getElementById("btnGrid").className=v==="grid"?"active":"";
   document.getElementById("btnKanban").className=v==="kanban"?"active":"";
-  document.getElementById("btnGantt").className=v==="gantt"?"active":"";
   document.getElementById("gridContainer").style.display=v==="grid"?"":"none";
   document.getElementById("kanbanContainer").style.display=v==="kanban"?"flex":"none";
-  document.getElementById("ganttContainer").style.display=v==="gantt"?"block":"none";
-  if(v==="gantt") renderGanttEquipo();
-  else renderCards();
+  renderCards();
 }
 
 function getSol(){
@@ -566,6 +561,8 @@ function cardHTML(s){
         <span style="font-size:10px;color:var(--text4)">📅 ${fecha}</span>
         ${ultimoCambio?`<span style="font-size:10px;color:#6366f1">🔄 ${ultimoCambio}</span>`:""}
         ${diasCiclo!==null?`<span style="font-size:10px;color:#10b981">⚡ Ciclo: ${diasCiclo}d</span>`:""}
+        ${s.fechaInicioEstimada?`<span style="font-size:10px;color:#8b5cf6">🗓 Inicio: ${new Date(s.fechaInicioEstimada).toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric"})}</span>`:""}
+        ${s.fechaInicioEstimada&&s.diasEstimados?`<span style="font-size:10px;color:#8b5cf6">🏁 Fin est: ${new Date(new Date(s.fechaInicioEstimada).getTime()+s.diasEstimados*86400000).toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric"})}</span>`:""}
       </div>
     </div></div>`;
 }
@@ -603,51 +600,21 @@ function renderKanban(sol){
 
 function detalleInnerHTML(s){
   const fecha=new Date(s.fechaCreacion).toLocaleDateString("es-AR",{day:"2-digit",month:"long",year:"numeric",hour:"2-digit",minute:"2-digit"});
-  const esGerente=currentUser?.rol==="gerente";
-  const prioBtns=esGerente?`
-    <div style="margin-top:12px">
-      <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text4);margin-bottom:8px">Cambiar prioridad</div>
-      <div style="display:flex;gap:8px">
-        ${["alta","media","baja"].map(p=>{
-          const col={alta:"#ef4444",media:"#f59e0b",baja:"#10b981"}[p];
-          const lbl={alta:"Alta",media:"Media",baja:"Baja"}[p];
-          const active=s.prioridad===p;
-          return `<button onclick="cambiarPrioGerente(${s.id},'${p}')" style="flex:1;padding:8px;border-radius:8px;cursor:pointer;font-weight:700;font-size:12px;font-family:inherit;border:2px solid ${active?col:"var(--border)"};background:${active?col+"18":"transparent"};color:${active?col:"var(--text3)"};">${lbl}</button>`;
-        }).join("")}
-      </div>
-    </div>`:"";
-  const planInfo=s.fechaInicioEstimada?`
-    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:4px">
-      <span style="font-size:11px;color:#6366f1">📅 Inicio est.: ${new Date(s.fechaInicioEstimada).toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric"})}</span>
-      ${s.diasEstimados?`<span style="font-size:11px;color:#f59e0b">⏱ ${s.diasEstimados} días est.</span>`:""}
-    </div>`:"";
   return `
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px">
       <div style="flex:1;padding-right:16px">
         <div style="font-size:18px;font-weight:700;color:var(--text);line-height:1.3;margin-bottom:10px">${s.titulo}</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">${badgeEstado(s.estado)} ${badgePrio(s.prioridad)}</div>
-        ${prioBtns}
       </div>
       <button style="background:none;border:none;color:#475569;cursor:pointer;font-size:22px" onclick="document.getElementById('detalleOverlay').style.display='none'">✕</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:14px">
-      <div style="display:flex;gap:12px"><span style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text4);min-width:130px">Solicitante</span><span style="font-size:13px;color:var(--text2)">${s.solicitante}</span></div>
-      <div style="display:flex;gap:12px"><span style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text4);min-width:130px">Equipo</span><span style="font-size:13px;color:var(--text2)">${s.equipo||"—"}</span></div>
-      <div style="display:flex;gap:12px"><span style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text4);min-width:130px">Fecha</span><span style="font-size:13px;color:var(--text2)">${fecha}</span></div>
-      ${planInfo}
-      ${s.descripcion?`<div><div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text4);margin-bottom:6px">Detalle</div><div style="font-size:13px;color:var(--text2);line-height:1.6;background:var(--bg2);border-radius:8px;padding:12px 14px;border:1px solid var(--border)">${s.descripcion}</div></div>`:""}
-      ${s.comentarios?.length?`<div><div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text4);margin-bottom:8px">Comentarios</div><div style="display:flex;flex-direction:column;gap:8px">${s.comentarios.map(c=>`<div class="comment-box"><div style="font-size:11px;color:#6366f1;font-weight:700;margin-bottom:4px">💬 ${new Date(c.fecha).toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"})}</div><div style="font-size:13px;color:var(--text2);line-height:1.5">${c.texto}</div></div>`).join("")}</div></div>`:""}
+      <div style="display:flex;gap:12px"><span style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;min-width:130px">Solicitante</span><span style="font-size:13px;color:var(--text2)">${s.solicitante}</span></div>
+      <div style="display:flex;gap:12px"><span style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;min-width:130px">Equipo</span><span style="font-size:13px;color:var(--text2)">${s.equipo||"—"}</span></div>
+      <div style="display:flex;gap:12px"><span style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;min-width:130px">Fecha</span><span style="font-size:13px;color:var(--text2)">${fecha}</span></div>
+      ${s.descripcion?`<div><div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#334155;margin-bottom:6px">Detalle</div><div style="font-size:13px;color:#94a3b8;line-height:1.6;background:var(--bg2);border-radius:8px;padding:12px 14px;border:1px solid #0f172a">${s.descripcion}</div></div>`:""}
+      ${s.comentarios?.length?`<div><div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#334155;margin-bottom:8px">Comentarios</div><div style="display:flex;flex-direction:column;gap:8px">${s.comentarios.map(c=>`<div class="comment-box"><div style="font-size:11px;color:#6366f1;font-weight:700;margin-bottom:4px">💬 ${new Date(c.fecha).toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"})}</div><div style="font-size:13px;color:#94a3b8;line-height:1.5">${c.texto}</div></div>`).join("")}</div></div>`:""}
     </div>`;
-}
-
-async function cambiarPrioGerente(id, nuevaPrio){
-  allData.solicitudes=(allData.solicitudes||[]).map(s=>s.id===id?{...s,prioridad:nuevaPrio}:s);
-  const sol=(allData.solicitudes||[]).find(s=>s.id===id);
-  await saveSol(sol);
-  renderCards();
-  // Refresh detalle modal
-  document.getElementById("detalleContent").innerHTML=detalleInnerHTML(sol);
-  showToast("✓ Prioridad actualizada","ok");
 }
 async function verDetalle(id){
   const s=(allData.solicitudes||[]).find(x=>x.id===id);if(!s)return;
@@ -702,85 +669,6 @@ function showToast(msg,type){
 let saved=null;try{const m=document.cookie.match(/(?:^|;)\s*of_user=([^;]*)/);saved=m?decodeURIComponent(m[1]):null;}catch(e){}
 if(saved){try{currentUser=JSON.parse(saved);enterApp();}catch(e){}}
 setInterval(()=>{if(currentUser)loadData();},30000);
-
-// ── GANTT EQUIPO ─────────────────────────────────────────────────────────────
-function renderGanttEquipo(){
-  const sol=(allData.solicitudes||[])
-    .filter(s=>currentUser?.rol==="gerente"||s.equipo===currentUser?.equipo||s.solicitanteId===currentUser?.id)
-    .filter(s=>s.fechaInicioEstimada&&s.diasEstimados)
-    .sort((a,b)=>new Date(a.fechaInicioEstimada)-new Date(b.fechaInicioEstimada));
-
-  const container=document.getElementById("ganttContainer");
-  if(!sol.length){
-    container.innerHTML=`<div style="text-align:center;padding:60px 0;color:var(--text4)">
-      <div style="font-size:40px;margin-bottom:12px">📅</div>
-      <div style="font-size:14px">No hay proyectos con planificación cargada aún.</div>
-    </div>`;
-    return;
-  }
-
-  const fechaMin=new Date(sol[0].fechaInicioEstimada);
-  const fechaMax=new Date(Math.max(...sol.map(s=>new Date(s.fechaInicioEstimada).getTime()+(s.diasEstimados*86400000))));
-  const totalDias=Math.ceil((fechaMax-fechaMin)/86400000)+5;
-  const colW=Math.max(26,Math.min(44,Math.floor((window.innerWidth-280)/totalDias)));
-  const colores={pendiente:"#94a3b8",desarrollo:"#f59e0b",prueba:"#6366f1",produccion:"#10b981",rechazado:"#ef4444"};
-  const hoy=new Date();hoy.setHours(0,0,0,0);
-
-  const dias=[];
-  for(let i=0;i<totalDias;i++){const nd=new Date(fechaMin);nd.setDate(nd.getDate()+i);dias.push({nd,esHoy:nd.toDateString()===hoy.toDateString()});}
-
-  const mesesGrupo=[];
-  dias.forEach(d=>{
-    const mes=d.nd.toLocaleDateString("es-AR",{month:"short",year:"2-digit"});
-    if(!mesesGrupo.length||mesesGrupo[mesesGrupo.length-1].label!==mes) mesesGrupo.push({label:mes,count:1});
-    else mesesGrupo[mesesGrupo.length-1].count++;
-  });
-
-  const headerMeses=mesesGrupo.map(m=>`<th colspan="${m.count}" style="padding:6px 4px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border);background:var(--bg2);white-space:nowrap">${m.label}</th>`).join("");
-  const headerDias=dias.map(d=>`<th style="min-width:${colW}px;width:${colW}px;padding:3px 1px;font-size:9px;color:${d.esHoy?"#6366f1":"var(--text4)"};font-weight:${d.esHoy?"800":"400"};background:${d.esHoy?"#6366f110":"var(--bg2)"}">${d.nd.getDate()}</th>`).join("");
-
-  const rows=sol.map(s=>{
-    const inicio=new Date(s.fechaInicioEstimada);
-    const offsetDias=Math.round((inicio-fechaMin)/86400000);
-    const color=colores[s.estado]||"#94a3b8";
-    const stage=STAGES.find(x=>x.id===s.estado)||STAGES[0];
-    const cells=dias.map((d,i)=>{
-      const inBar=i>=offsetDias&&i<offsetDias+s.diasEstimados;
-      const isFirst=i===offsetDias, isLast=i===offsetDias+s.diasEstimados-1;
-      const weekend=d.nd.getDay()===0||d.nd.getDay()===6;
-      return `<td style="padding:2px 0;${d.esHoy?"border-top:2px solid #6366f1;border-bottom:2px solid #6366f1;":""}">
-        ${inBar?`<div style="height:24px;background:${color}cc;border-radius:${isFirst?"8px 0 0 8px":isLast?"0 8px 8px 0":"0"};${isFirst?"margin-left:2px":""}${isLast?"margin-right:2px":""}"></div>`
-        :`<div style="height:24px;${weekend?"background:var(--border2)":""};border-radius:2px"></div>`}
-      </td>`;
-    }).join("");
-    return `<tr style="border-bottom:1px solid var(--border2)" onclick="verDetalle(${s.id})">
-      <td style="padding:8px 14px;min-width:200px;max-width:200px;position:sticky;left:0;background:var(--bg3);z-index:2;border-right:1px solid var(--border);cursor:pointer">
-        <div style="font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.titulo}</div>
-        <div style="display:flex;gap:6px;margin-top:3px">
-          <span style="font-size:9px;color:${color};font-weight:700;text-transform:uppercase">${stage.label}</span>
-          <span style="font-size:9px;color:var(--text4)">${s.diasEstimados}d</span>
-        </div>
-      </td>${cells}</tr>`;
-  }).join("");
-
-  container.innerHTML=`
-    <div style="font-size:11px;color:var(--text4);margin-bottom:10px">${sol.length} proyecto${sol.length!==1?"s":""} con planificación · <span style="color:#6366f1">│ Hoy</span></div>
-    <div style="overflow-x:auto;border:1px solid var(--border);border-radius:12px">
-      <table style="border-collapse:collapse;font-family:inherit">
-        <thead>
-          <tr>
-            <th style="position:sticky;left:0;background:var(--bg2);z-index:3;min-width:200px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:8px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">Proyecto</th>
-            ${headerMeses}
-          </tr>
-          <tr>
-            <th style="position:sticky;left:0;background:var(--bg2);z-index:3;border-right:1px solid var(--border);border-bottom:2px solid var(--border)"></th>
-            ${headerDias}
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>`;
-}
 </script>
 </body>
 </html>
