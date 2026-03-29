@@ -289,6 +289,8 @@ input.inp-sm::placeholder{color:var(--text4)}
 <div class="toast" id="toast"></div>
 
 <script>
+// Parsea fecha YYYY-MM-DD sin desfase de timezone
+function parseFecha(str){if(!str)return null;const[y,m,d]=str.split("-").map(Number);return new Date(y,m-1,d);}
 const API="https://script.google.com/macros/s/AKfycby6xK8H6ESoruYOfevHRb7gux4fRbbm1AMsP8PzDKD_mQdiPYLfjEPJ4UIP86f2-hN3/exec";
 
 // ── TEMA ─────────────────────────────────────────────────────────────────────
@@ -562,8 +564,8 @@ function cardHTML(s){
         <span style="font-size:10px;color:var(--text4)">📅 Creada: ${fechaCreacion}</span>
         ${ultimoCambio?`<span style="font-size:10px;color:#6366f1">🔄 Último cambio: ${ultimoCambio}</span>`:""}
         ${diasCiclo!==null?`<span style="font-size:10px;color:#10b981">⚡ Ciclo: ${diasCiclo}d</span>`:""}
-        ${s.fechaInicioEstimada?`<span style="font-size:10px;color:#8b5cf6">🗓 Inicio: ${new Date(s.fechaInicioEstimada).toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric"})}</span>`:""}
-        ${s.fechaInicioEstimada&&s.diasEstimados?`<span style="font-size:10px;color:#8b5cf6">🏁 Fin est: ${new Date(new Date(s.fechaInicioEstimada).getTime()+s.diasEstimados*86400000).toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric"})}</span>`:""}
+        ${s.fechaInicioEstimada?`<span style="font-size:10px;color:#8b5cf6">🗓 Inicio: ${parseFecha(s.fechaInicioEstimada).toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric"})}</span>`:""}
+        ${s.fechaInicioEstimada&&s.diasEstimados?`<span style="font-size:10px;color:#8b5cf6">🏁 Fin est: ${new Date(parseFecha(s.fechaInicioEstimada).getTime()+s.diasEstimados*86400000).toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric"})}</span>`:""}
       </div>
     </div>
   </div>`;
@@ -614,8 +616,8 @@ function renderLista(sol){
         <span>📅 ${fechaCreacion}</span>
         ${ultimoCambio?`<span style="color:#6366f1">🔄 ${ultimoCambio}</span>`:""}
         ${diasCiclo!==null?`<span style="color:#10b981">⚡ ${diasCiclo}d ciclo</span>`:""}
-        ${s.fechaInicioEstimada?`<span style="color:#8b5cf6">🗓 ${new Date(s.fechaInicioEstimada).toLocaleDateString("es-AR",{day:"2-digit",month:"short"})}</span>`:""}
-        ${s.fechaInicioEstimada&&s.diasEstimados?`<span style="color:#8b5cf6">🏁 ${new Date(new Date(s.fechaInicioEstimada).getTime()+s.diasEstimados*86400000).toLocaleDateString("es-AR",{day:"2-digit",month:"short"})}</span>`:""}
+        ${s.fechaInicioEstimada?`<span style="color:#8b5cf6">🗓 ${parseFecha(s.fechaInicioEstimada).toLocaleDateString("es-AR",{day:"2-digit",month:"short"})}</span>`:""}
+        ${s.fechaInicioEstimada&&s.diasEstimados?`<span style="color:#8b5cf6">🏁 ${new Date(parseFecha(s.fechaInicioEstimada).getTime()+s.diasEstimados*86400000).toLocaleDateString("es-AR",{day:"2-digit",month:"short"})}</span>`:""}
       </div>
       <div style="display:flex;gap:6px">
         ${btnGestionar}
@@ -910,7 +912,7 @@ function renderGantt(){
   const sol=(allData.solicitudes||[])
     .filter(s=>s.fechaInicioEstimada && s.diasEstimados)
     .filter(s=>sector==="todos"||s.equipo===sector)
-    .sort((a,b)=>new Date(a.fechaInicioEstimada)-new Date(b.fechaInicioEstimada));
+    .sort((a,b)=>parseFecha(a.fechaInicioEstimada)-parseFecha(b.fechaInicioEstimada));
 
   const container=document.getElementById("ganttContainer");
   if(!sol.length){
@@ -924,7 +926,7 @@ function renderGantt(){
 
   // Calculate date range
   const fechaMin=new Date(sol[0].fechaInicioEstimada);
-  const fechaMax=new Date(Math.max(...sol.map(s=>new Date(s.fechaInicioEstimada).getTime()+(s.diasEstimados*86400000))));
+  const fechaMax=new Date(Math.max(...sol.map(s=>parseFecha(s.fechaInicioEstimada).getTime()+(s.diasEstimados*86400000))));
   const totalDias=Math.ceil((fechaMax-fechaMin)/86400000)+5;
   const colW=Math.max(28, Math.min(48, Math.floor((window.innerWidth-320)/totalDias)));
 
@@ -956,7 +958,7 @@ function renderGantt(){
   const headerDias=dias.map(d=>`<th style="min-width:${colW}px;width:${colW}px;padding:3px 1px;font-size:9px;color:${d.esHoy?"#6366f1":d.nd.getDay()===0||d.nd.getDay()===6?"var(--text4)":"var(--text4)"};font-weight:${d.esHoy?"800":"400"};background:${d.esHoy?"#6366f110":"var(--bg2)"}">${d.nd.getDate()}</th>`).join("");
 
   const rows=sol.map(s=>{
-    const inicio=new Date(s.fechaInicioEstimada);
+    const inicio=parseFecha(s.fechaInicioEstimada);
     const offsetDias=Math.round((inicio-fechaMin)/86400000);
     const color=colores[s.estado]||"#94a3b8";
     const stage=STAGES.find(x=>x.id===s.estado)||STAGES[0];
