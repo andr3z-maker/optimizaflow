@@ -330,18 +330,22 @@ function saveMeta(){
   const meta={usuarios:allData.usuarios||[],nextId:allData.nextId||1};
   return jsonpCall("&action=savemeta&data="+encodeURIComponent(JSON.stringify(meta)));
 }
-function saveSol(sol){
-  return jsonpCall("&action=savesol&id="+sol.id+"&data="+encodeURIComponent(JSON.stringify(sol)));
+function saveSol(sol, emailData){
+  let params = "&action=savesol&id="+sol.id+"&data="+encodeURIComponent(JSON.stringify(sol));
+  if(emailData){
+    params += "&notificar=1&emailData="+encodeURIComponent(JSON.stringify(emailData));
+  }
+  return jsonpCall(params);
 }
 function deleteSol(id){
   return jsonpCall("&action=deletesol&id="+id);
 }
 
-async function saveData(solModificada){
+async function saveData(solModificada, emailData){
   const ind=document.getElementById("saveIndicator");
   ind.textContent="⏳ Guardando…";ind.style.color="#f59e0b";ind.style.display="inline";
   try{
-    if(solModificada) await saveSol(solModificada);
+    if(solModificada) await saveSol(solModificada, emailData);
     await saveMeta();
     ind.textContent="✓ Guardado";ind.style.color="#10b981";
     setTimeout(()=>ind.style.display="none",2000);
@@ -699,8 +703,10 @@ function renderAdminModal(){
 async function guardarAdmin(){
   const comentario=document.getElementById("nuevoComentario").value.trim();
   let solModificada=null;
+  let estadoAnterior=null;
   allData.solicitudes=(allData.solicitudes||[]).map(s=>{
     if(s.id!==modalSol.id)return s;
+    estadoAnterior=s.estado;
     const u={...s,estado:modalEstado,prioridad:modalPrio,equipo:document.getElementById('adminEquipo').value,
       fechaInicioEstimada:document.getElementById('fechaInicioEstimada')?.value||s.fechaInicioEstimada||null,
       diasEstimados:parseInt(document.getElementById('diasEstimados')?.value)||s.diasEstimados||null};
@@ -715,9 +721,28 @@ async function guardarAdmin(){
     solModificada=u;
     return u;
   });
+
+  // Armar datos de notificación si cambió el estado
+  let emailData=null;
+  if(solModificada && estadoAnterior !== modalEstado){
+    const solicitante=(allData.usuarios||[]).find(u=>u.id===solModificada.solicitanteId);
+    if(solicitante?.email){
+      emailData={
+        titulo: solModificada.titulo,
+        equipo: solModificada.equipo,
+        solicitante: solModificada.solicitante,
+        emailSolicitante: solicitante.email,
+        estadoAnterior: estadoAnterior,
+        nuevoEstado: modalEstado,
+        comentario: comentario||null
+      };
+    }
+  }
+
   document.getElementById("adminOverlay").style.display="none";
-  await saveData(solModificada);renderStats();renderContent();
-  showToast("✅ Cambios guardados","ok");
+  await saveData(solModificada, emailData);
+  renderStats();renderContent();
+  showToast("✅ Cambios guardados"+(emailData?" · 📧 Notificación enviada":""),"ok");
 }
 async function eliminar(id){
   if(!confirm("¿Eliminar esta solicitud?"))return;
