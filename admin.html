@@ -330,23 +330,26 @@ function saveMeta(){
   const meta={usuarios:allData.usuarios||[],nextId:allData.nextId||1};
   return jsonpCall("&action=savemeta&data="+encodeURIComponent(JSON.stringify(meta)));
 }
-function saveSol(sol, emailData){
-  let params = "&action=savesol&id="+sol.id+"&data="+encodeURIComponent(JSON.stringify(sol));
-  if(emailData){
-    params += "&notificar=1&emailData="+encodeURIComponent(JSON.stringify(emailData));
-  }
-  return jsonpCall(params);
+function saveSol(sol){
+  return jsonpCall("&action=savesol&id="+sol.id+"&data="+encodeURIComponent(JSON.stringify(sol)));
 }
 function deleteSol(id){
   return jsonpCall("&action=deletesol&id="+id);
+}
+function sendEmail(emailData){
+  return jsonpCall("&action=sendemail&emailData="+encodeURIComponent(JSON.stringify(emailData)));
 }
 
 async function saveData(solModificada, emailData){
   const ind=document.getElementById("saveIndicator");
   ind.textContent="⏳ Guardando…";ind.style.color="#f59e0b";ind.style.display="inline";
   try{
-    if(solModificada) await saveSol(solModificada, emailData);
+    if(solModificada) await saveSol(solModificada);
     await saveMeta();
+    // Email en llamada separada para evitar límite de URL
+    if(emailData){
+      try{ await sendEmail(emailData); }catch(e){ console.warn("Email error:",e); }
+    }
     ind.textContent="✓ Guardado";ind.style.color="#10b981";
     setTimeout(()=>ind.style.display="none",2000);
   }catch{ind.textContent="⚠️ Error";ind.style.color="#ef4444";}
