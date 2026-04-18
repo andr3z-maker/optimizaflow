@@ -159,6 +159,7 @@ input.inp-sm::placeholder{color:var(--text4)}
       </div>
       <button onclick="loadData()" style="background:none;border:1px solid var(--border);border-radius:8px;color:var(--text3);cursor:pointer;padding:7px 14px;font-size:12px;font-family:inherit">↻</button>
       <button class="btn-theme" id="btnTheme" onclick="toggleTheme()" title="Cambiar tema">🌙</button>
+      <button onclick="abrirNuevaSolicitudAdmin()" style="padding:8px 18px;border-radius:8px;border:none;background:linear-gradient(135deg,#ef4444,#f59e0b);color:white;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit;display:inline-flex;align-items:center;gap:6px"><span style="font-size:16px">+</span> Nueva solicitud</button>
     </div>
   </div>
 </div>
@@ -284,6 +285,93 @@ input.inp-sm::placeholder{color:var(--text4)}
 <!-- Modal gestión solicitud -->
 <div class="overlay" id="adminOverlay" style="display:none">
   <div class="modal" id="adminModal"></div>
+</div>
+
+
+<!-- Modal nueva solicitud admin (en nombre de usuario) -->
+<div class="overlay" id="nuevaSolAdminOverlay" style="display:none">
+  <div class="modal" style="max-width:520px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px">
+      <div>
+        <div style="font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#ef4444;margin-bottom:4px">🔧 PANEL ADMIN</div>
+        <div style="font-size:18px;font-weight:700;color:var(--text)">Nueva solicitud</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:3px">Cargá una solicitud en nombre de un usuario</div>
+      </div>
+      <button style="background:none;border:none;color:#475569;cursor:pointer;font-size:22px" onclick="cerrarNuevaSolAdmin()">&#x2715;</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div>
+        <label class="lbl">Solicitante <span style="color:#ef4444">*</span></label>
+        <div style="position:relative">
+          <input id="nsa-userSearch" class="inp" placeholder="Buscá por nombre o sector&#x2026;" oninput="filtrarUsuariosNSA()" onfocus="filtrarUsuariosNSA()" autocomplete="off" style="padding-right:36px"/>
+          <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--text4);font-size:14px;pointer-events:none">&#x25BE;</span>
+        </div>
+        <div id="nsa-userDropdown" style="display:none;position:absolute;z-index:200;background:var(--bg3);border:1px solid var(--border);border-radius:10px;max-height:200px;overflow-y:auto;min-width:400px;box-shadow:0 8px 24px rgba(0,0,0,.3);margin-top:4px"></div>
+        <div id="nsa-userSelected" style="display:none;margin-top:8px;padding:10px 14px;background:var(--bg4);border:1px solid #6366f130;border-radius:8px;align-items:center;gap:10px">
+          <div id="nsa-avatarChip" style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;flex-shrink:0"></div>
+          <div>
+            <div id="nsa-userName" style="font-size:13px;font-weight:700;color:var(--text)"></div>
+            <div id="nsa-userDetail" style="font-size:11px;color:var(--text3)"></div>
+          </div>
+          <button onclick="limpiarUsuarioNSA()" style="margin-left:auto;background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px">&#x2715;</button>
+        </div>
+      </div>
+      <div>
+        <label class="lbl">Título <span style="color:#ef4444">*</span></label>
+        <input id="nsa-titulo" class="inp" placeholder="Ej: Automatizar cierre mensual de inventario"/>
+      </div>
+      <div>
+        <label class="lbl">Detalle / contexto</label>
+        <textarea id="nsa-desc" class="inp" placeholder="Descripción del pedido, proceso actual, qué se espera mejorar&#x2026;" style="min-height:80px;resize:vertical"></textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label class="lbl">Sector solicitante</label>
+          <select id="nsa-equipo" class="inp" style="cursor:pointer">
+            <option value="Almacenes y Logística">Almacenes y Logística</option>
+            <option value="Gestión de Materiales">Gestión de Materiales</option>
+            <option value="Logística y Transporte">Logística y Transporte</option>
+            <option value="Venta de Materiales">Venta de Materiales</option>
+            <option value="Catalogación">Catalogación</option>
+          </select>
+        </div>
+        <div>
+          <label class="lbl">Estado inicial</label>
+          <select id="nsa-estado" class="inp" style="cursor:pointer">
+            <option value="pendiente">Pendiente</option>
+            <option value="desarrollo">En Desarrollo</option>
+            <option value="prueba">En Prueba</option>
+            <option value="produccion">En Producción</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="lbl">Prioridad</label>
+        <div style="display:flex;gap:8px">
+          <button class="prio-btn" id="nsa-prio-alta" onclick="setNSAPrio('alta')">Alta</button>
+          <button class="prio-btn" id="nsa-prio-media" onclick="setNSAPrio('media')">Media</button>
+          <button class="prio-btn" id="nsa-prio-baja" onclick="setNSAPrio('baja')">Baja</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label class="lbl">Fecha inicio est. <span style="color:var(--text4)">(opcional)</span></label>
+          <input type="date" id="nsa-fechaInicio" class="inp"/>
+        </div>
+        <div>
+          <label class="lbl">Días estimados <span style="color:var(--text4)">(opcional)</span></label>
+          <input type="number" id="nsa-diasEst" class="inp" min="1" placeholder="Ej: 14"/>
+        </div>
+      </div>
+      <div id="nsa-err" style="color:#ef4444;font-size:13px;background:#ef444412;border:1px solid #ef444430;border-radius:7px;padding:9px 14px;display:none"></div>
+    </div>
+    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:24px">
+      <button class="btn-outline" style="width:auto;padding:10px 24px" onclick="cerrarNuevaSolAdmin()">Cancelar</button>
+      <button id="nsa-btnEnviar" onclick="enviarNuevaSolAdmin()" style="padding:10px 28px;border-radius:8px;border:none;background:linear-gradient(135deg,#ef4444,#f59e0b);color:white;cursor:pointer;font-size:14px;font-weight:700;font-family:inherit">
+        Crear solicitud
+      </button>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1106,6 +1194,170 @@ async function guardarSector(){
   showToast("✓ Sector actualizado","ok");
   cerrarSectorModal();
 }
+
+// ── NUEVA SOLICITUD ADMIN ────────────────────────────────────────────────────
+let nsaPrioSelected = "media";
+let nsaUserSelected = null;
+
+function abrirNuevaSolicitudAdmin(){
+  // Reset form
+  nsaUserSelected = null;
+  nsaPrioSelected = "media";
+  document.getElementById("nsa-userSearch").value = "";
+  document.getElementById("nsa-userDropdown").style.display = "none";
+  document.getElementById("nsa-userSelected").style.display = "none";
+  document.getElementById("nsa-titulo").value = "";
+  document.getElementById("nsa-desc").value = "";
+  document.getElementById("nsa-estado").value = "pendiente";
+  document.getElementById("nsa-fechaInicio").value = "";
+  document.getElementById("nsa-diasEst").value = "";
+  document.getElementById("nsa-err").style.display = "none";
+  setNSAPrio("media");
+  // Set equipo default to first option
+  document.getElementById("nsa-equipo").value = "Almacenes y Logística";
+  document.getElementById("nuevaSolAdminOverlay").style.display = "flex";
+}
+
+function cerrarNuevaSolAdmin(){
+  document.getElementById("nuevaSolAdminOverlay").style.display = "none";
+  document.getElementById("nsa-userDropdown").style.display = "none";
+}
+
+function setNSAPrio(p){
+  nsaPrioSelected = p;
+  const colores = {alta:"#ef4444", media:"#f59e0b", baja:"#10b981"};
+  ["alta","media","baja"].forEach(id => {
+    const btn = document.getElementById("nsa-prio-"+id);
+    const col = colores[id];
+    if(id === p){
+      btn.style.borderColor = col;
+      btn.style.background = col + "18";
+      btn.style.color = col;
+    } else {
+      btn.style.borderColor = "var(--border)";
+      btn.style.background = "transparent";
+      btn.style.color = "var(--text3)";
+    }
+  });
+}
+
+function filtrarUsuariosNSA(){
+  const q = document.getElementById("nsa-userSearch").value.toLowerCase();
+  const aprobados = (allData.usuarios || []).filter(u => u.estado === "aprobado");
+  const filtrados = q
+    ? aprobados.filter(u => u.nombre.toLowerCase().includes(q) || (u.equipo||"").toLowerCase().includes(q) || u.email.toLowerCase().includes(q))
+    : aprobados;
+  const drop = document.getElementById("nsa-userDropdown");
+  if(!filtrados.length){
+    drop.innerHTML = '<div style="padding:14px 16px;font-size:13px;color:var(--text4)">Sin resultados</div>';
+  } else {
+    drop.innerHTML = filtrados.map(u => {
+      const initials = u.nombre.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+      return `<div onclick="seleccionarUsuarioNSA('${u.id}')" style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border2);transition:background .1s"
+        onmouseenter="this.style.background='var(--bg4)'" onmouseleave="this.style.background='transparent'">
+        <div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white;flex-shrink:0">${initials}</div>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--text)">${u.nombre}</div>
+          <div style="font-size:11px;color:var(--text3)">${u.equipo} &middot; ${u.email}</div>
+        </div>
+      </div>`;
+    }).join("");
+  }
+  drop.style.display = "block";
+}
+
+function seleccionarUsuarioNSA(uid){
+  const u = (allData.usuarios || []).find(x => x.id === uid);
+  if(!u) return;
+  nsaUserSelected = u;
+  const initials = u.nombre.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+  document.getElementById("nsa-userSearch").value = "";
+  document.getElementById("nsa-userDropdown").style.display = "none";
+  document.getElementById("nsa-avatarChip").textContent = initials;
+  document.getElementById("nsa-userName").textContent = u.nombre;
+  document.getElementById("nsa-userDetail").textContent = u.equipo + " · " + u.email;
+  const sel = document.getElementById("nsa-userSelected");
+  sel.style.display = "flex";
+  // Auto-set sector to user's team
+  const equipoSel = document.getElementById("nsa-equipo");
+  if(u.equipo) equipoSel.value = u.equipo;
+}
+
+function limpiarUsuarioNSA(){
+  nsaUserSelected = null;
+  document.getElementById("nsa-userSelected").style.display = "none";
+  document.getElementById("nsa-userSearch").value = "";
+}
+
+// Close dropdown on outside click
+document.addEventListener("click", function(e){
+  const overlay = document.getElementById("nuevaSolAdminOverlay");
+  if(overlay && overlay.style.display !== "none"){
+    const drop = document.getElementById("nsa-userDropdown");
+    const input = document.getElementById("nsa-userSearch");
+    if(drop && !drop.contains(e.target) && e.target !== input){
+      drop.style.display = "none";
+    }
+  }
+});
+
+async function enviarNuevaSolAdmin(){
+  const titulo = document.getElementById("nsa-titulo").value.trim();
+  const desc = document.getElementById("nsa-desc").value.trim();
+  const equipo = document.getElementById("nsa-equipo").value;
+  const estado = document.getElementById("nsa-estado").value;
+  const fechaInicio = document.getElementById("nsa-fechaInicio").value || null;
+  const diasEst = parseInt(document.getElementById("nsa-diasEst").value) || null;
+  const err = document.getElementById("nsa-err");
+
+  if(!nsaUserSelected){ err.textContent = "Seleccioná un usuario solicitante."; err.style.display = "block"; return; }
+  if(!titulo){ err.textContent = "El título es obligatorio."; err.style.display = "block"; return; }
+  err.style.display = "none";
+
+  const btn = document.getElementById("nsa-btnEnviar");
+  btn.textContent = "Creando…"; btn.disabled = true;
+
+  const solId = allData.nextId;
+  const historialEstados = estado !== "pendiente"
+    ? [{estado:"pendiente", desde: new Date().toISOString()}, {estado, desde: new Date().toISOString()}]
+    : [{estado:"pendiente", desde: new Date().toISOString()}];
+
+  const nueva = {
+    id: solId,
+    titulo,
+    descripcion: desc,
+    equipo,
+    solicitante: nsaUserSelected.nombre,
+    solicitanteId: nsaUserSelected.id,
+    prioridad: nsaPrioSelected,
+    estado,
+    fechaCreacion: new Date().toISOString(),
+    adjuntos: [],
+    comentarios: [],
+    historialEstados,
+    fechaInicioEstimada: fechaInicio,
+    diasEstimados: diasEst,
+    creadaPorAdmin: true
+  };
+
+  allData.solicitudes = [...(allData.solicitudes || []), nueva];
+  allData.nextId = solId + 1;
+
+  try {
+    await saveSol(nueva);
+    await saveMeta();
+    cerrarNuevaSolAdmin();
+    renderStats();
+    renderContent();
+    showToast("✅ Solicitud creada en nombre de " + nsaUserSelected.nombre, "ok");
+  } catch(e) {
+    allData.solicitudes.pop();
+    allData.nextId--;
+    showToast("⚠️ Error al crear. Intentá de nuevo.", "err");
+  }
+  btn.textContent = "Crear solicitud"; btn.disabled = false;
+}
+
 </script>
 </div><!-- /adminApp -->
 </body>
