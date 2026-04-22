@@ -214,11 +214,10 @@ select.inp-sm{background:var(--bg3);border:1px solid var(--border);border-radius
         <div><div class="logo-title">OptimizaFlow</div><div class="logo-sub">PORTAL DEL EQUIPO</div></div>
       </div>
       <div style="display:flex;align-items:center;gap:10px">
-        <div class="user-chip" style="cursor:pointer" onclick="abrirCambioPass()" title="Cambiar contraseña">
+        <div class="user-chip">
           <div class="user-avatar" id="userAvatar"></div>
           <span style="font-size:12px;font-weight:600;color:var(--text2)" id="userName"></span>
         </div>
-        <button class="btn-ghost" onclick="abrirCambioPass()" title="Cambiar contraseña" style="font-size:14px">🔑</button>
         <button class="btn-ghost" onclick="doLogout()">Salir</button>
         <button class="btn-theme" id="btnTheme" onclick="toggleTheme()" title="Cambiar tema">🌙</button>
         <button class="btn-sm" onclick="abrirModal()"><span style="font-size:16px">+</span> Nueva solicitud</button>
@@ -307,42 +306,6 @@ select.inp-sm{background:var(--bg3);border:1px solid var(--border);border-radius
   <div class="modal" id="detalleContent"></div>
 </div>
 
-<!-- Modal cambio de contraseña -->
-<div class="overlay" id="changePassOverlay" style="display:none">
-  <div class="modal" style="max-width:400px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
-      <div>
-        <div style="font-size:18px;font-weight:700;color:var(--text)">Cambiar contraseña</div>
-        <div style="font-size:12px;color:var(--text3);margin-top:4px" id="changePassUser"></div>
-      </div>
-      <button style="background:none;border:none;color:#475569;cursor:pointer;font-size:22px" onclick="cerrarCambioPass()">✕</button>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:16px">
-      <div>
-        <label class="lbl">Contraseña actual <span style="color:#ef4444">*</span></label>
-        <input id="cpActual" class="inp" type="password" placeholder="Ingresá tu contraseña actual"/>
-      </div>
-      <div>
-        <label class="lbl">Nueva contraseña <span style="color:#ef4444">*</span></label>
-        <input id="cpNueva" class="inp" type="password" placeholder="Mínimo 6 caracteres"/>
-      </div>
-      <div>
-        <label class="lbl">Confirmar nueva contraseña <span style="color:#ef4444">*</span></label>
-        <input id="cpNueva2" class="inp" type="password" placeholder="Repetí la nueva contraseña"
-          onkeydown="if(event.key==='Enter')guardarCambioPass()"/>
-      </div>
-      <div id="cpErr" class="err-box"></div>
-      <div id="cpOk" style="color:#10b981;font-size:13px;background:#10b98112;border:1px solid #10b98130;border-radius:7px;padding:9px 14px;display:none">✓ Contraseña actualizada correctamente</div>
-      <div style="display:flex;gap:12px;justify-content:flex-end">
-        <button class="btn-outline" style="width:auto;padding:10px 20px" onclick="cerrarCambioPass()">Cancelar</button>
-        <button id="btnGuardarPass" onclick="guardarCambioPass()" style="padding:10px 24px;border-radius:8px;border:none;
-          background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;cursor:pointer;font-size:14px;font-weight:700;font-family:inherit">
-          Guardar</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <div class="toast" id="toast"></div>
 
 <script>
@@ -404,10 +367,6 @@ function saveSol(sol){
 // Elimina una solicitud
 function deleteSol(id){
   return jsonpCall("&action=deletesol&id="+id);
-}
-// Envía email de notificación
-function sendEmail(emailData){
-  return jsonpCall("&action=sendemail&emailData="+encodeURIComponent(JSON.stringify(emailData)));
 }
 
 
@@ -598,10 +557,7 @@ function cardHTML(s){
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
       <div style="font-size:14px;font-weight:700;color:var(--text);line-height:1.3;flex:1;padding-right:8px">${s.titulo}</div>
       ${badgePrio(s.prioridad)}</div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-      <span style="font-size:10px;font-weight:800;color:#6366f1;background:#6366f115;border:1px solid #6366f130;border-radius:4px;padding:2px 7px;letter-spacing:.05em">#${s.id}</span>
-      <span style="font-size:12px;color:#475569">${s.equipo||""} · ${s.solicitante}</span>
-    </div>
+    <div style="font-size:12px;color:#475569;margin-bottom:10px">${s.equipo||""} · ${s.solicitante}</div>
     ${s.descripcion?`<div style="font-size:12px;color:#64748b;line-height:1.5;margin-bottom:10px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${s.descripcion}</div>`:""}
     <div style="display:flex;flex-direction:column;gap:6px">
       <div style="display:flex;justify-content:space-between;align-items:center">
@@ -733,85 +689,21 @@ async function enviarSolicitud(){
   allData.nextId=solId+1;
   try{
     await saveSol(nueva);
-    allData.nextId=solId+1;
-    await saveMeta();
-    // Notificar a administración
-    try{
-      await sendEmail({
-        titulo:     nueva.titulo,
-        equipo:     nueva.equipo,
-        solicitante:nueva.solicitante,
-        emailSolicitante: currentUser.email||"",
-        emailDestino:     "lbenitez@pan-energy.com",
-        prioridad:  nueva.prioridad,
-        descripcion:nueva.descripcion||"",
-        estadoAnterior: null,
-        nuevoEstado:"pendiente",
-        esNuevaSolicitud: true,
-        comentario: null
-      });
-    }catch(emailErr){ console.warn("Email error:",emailErr); }
-    cerrarModal();showToast("✅ Solicitud enviada correctamente","ok");
-    renderStats();renderCards();
   }catch(e){
     allData.solicitudes.pop();allData.nextId--;
     showToast("⚠️ Error al enviar. Intenta de nuevo.","err");
+    btn.textContent="Enviar solicitud";btn.disabled=false;
+    return;
   }
+  // saveMeta puede fallar si la URL es muy larga — no es crítico, el registro ya se guardó
+  try{ await saveMeta(); }catch(e){ console.warn("saveMeta falló, no crítico:",e); }
+  cerrarModal();showToast("✅ Solicitud enviada correctamente","ok");
+  renderStats();renderCards();
   btn.textContent="Enviar solicitud";btn.disabled=false;
 }
 function showToast(msg,type){
   const t=document.getElementById("toast");t.textContent=msg;t.className="toast "+type;t.style.display="block";
   setTimeout(()=>t.style.display="none",3500);
-}
-
-// ── CAMBIO DE CONTRASEÑA ──────────────────────────────────────────────────────
-function abrirCambioPass(){
-  document.getElementById("cpActual").value="";
-  document.getElementById("cpNueva").value="";
-  document.getElementById("cpNueva2").value="";
-  document.getElementById("cpErr").style.display="none";
-  document.getElementById("cpOk").style.display="none";
-  document.getElementById("changePassUser").textContent=currentUser?.email||"";
-  document.getElementById("changePassOverlay").style.display="flex";
-  setTimeout(()=>document.getElementById("cpActual").focus(),100);
-}
-function cerrarCambioPass(){
-  document.getElementById("changePassOverlay").style.display="none";
-}
-async function guardarCambioPass(){
-  const actual=document.getElementById("cpActual").value;
-  const nueva=document.getElementById("cpNueva").value;
-  const nueva2=document.getElementById("cpNueva2").value;
-  const err=document.getElementById("cpErr");
-  const ok=document.getElementById("cpOk");
-  err.style.display="none";ok.style.display="none";
-  if(!actual||!nueva||!nueva2){err.textContent="Completá todos los campos.";err.style.display="block";return;}
-  if(nueva.length<6){err.textContent="La nueva contraseña debe tener al menos 6 caracteres.";err.style.display="block";return;}
-  if(nueva!==nueva2){err.textContent="Las contraseñas nuevas no coinciden.";err.style.display="block";return;}
-  const hashActual=await hashPass(actual);
-  if(hashActual!==currentUser.password){err.textContent="La contraseña actual es incorrecta.";err.style.display="block";return;}
-  const btn=document.getElementById("btnGuardarPass");btn.textContent="Guardando…";btn.disabled=true;
-  const hashNueva=await hashPass(nueva);
-  // Actualizar en allData
-  allData.usuarios=(allData.usuarios||[]).map(u=>u.id===currentUser.id?{...u,password:hashNueva}:u);
-  currentUser={...currentUser,password:hashNueva};
-  try{
-    await saveMeta();
-    // Actualizar cookie
-    try{document.cookie="of_user="+encodeURIComponent(JSON.stringify(currentUser))+";path=/;max-age=86400";}catch(e){}
-    ok.style.display="block";
-    document.getElementById("cpActual").value="";
-    document.getElementById("cpNueva").value="";
-    document.getElementById("cpNueva2").value="";
-    showToast("✓ Contraseña actualizada","ok");
-    setTimeout(()=>cerrarCambioPass(),1500);
-  }catch(e){
-    err.textContent="Error al guardar. Intentá de nuevo.";err.style.display="block";
-    // Revertir
-    allData.usuarios=(allData.usuarios||[]).map(u=>u.id===currentUser.id?{...u,password:hashActual}:u);
-    currentUser={...currentUser,password:hashActual};
-  }
-  btn.textContent="Guardar";btn.disabled=false;
 }
 let saved=null;try{const m=document.cookie.match(/(?:^|;)\s*of_user=([^;]*)/);saved=m?decodeURIComponent(m[1]):null;}catch(e){}
 if(saved){try{currentUser=JSON.parse(saved);enterApp();}catch(e){}}
@@ -833,7 +725,7 @@ function renderGanttEquipo(){
     return;
   }
 
-  const fechaMin=parseFecha(sol[0].fechaInicioEstimada);
+  const fechaMin=new Date(sol[0].fechaInicioEstimada);
   const fechaMax=new Date(Math.max(...sol.map(s=>parseFecha(s.fechaInicioEstimada).getTime()+(s.diasEstimados*86400000))));
   const totalDias=Math.ceil((fechaMax-fechaMin)/86400000)+5;
   const colW=Math.max(26,Math.min(44,Math.floor((window.innerWidth-280)/totalDias)));
@@ -870,8 +762,7 @@ function renderGanttEquipo(){
     return `<tr style="border-bottom:1px solid var(--border2)" onclick="verDetalle(${s.id})">
       <td style="padding:8px 14px;min-width:200px;max-width:200px;position:sticky;left:0;background:var(--bg3);z-index:2;border-right:1px solid var(--border);cursor:pointer">
         <div style="font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.titulo}</div>
-        <div style="display:flex;gap:6px;margin-top:3px;align-items:center">
-          <span style="font-size:9px;font-weight:800;color:#6366f1;background:#6366f115;border:1px solid #6366f130;border-radius:3px;padding:1px 5px">#${s.id}</span>
+        <div style="display:flex;gap:6px;margin-top:3px">
           <span style="font-size:9px;color:${color};font-weight:700;text-transform:uppercase">${stage.label}</span>
           <span style="font-size:9px;color:var(--text4)">${s.diasEstimados}d</span>
         </div>
@@ -880,7 +771,7 @@ function renderGanttEquipo(){
 
   container.innerHTML=`
     <div style="font-size:11px;color:var(--text4);margin-bottom:10px">${sol.length} proyecto${sol.length!==1?"s":""} con planificación · <span style="color:#6366f1">│ Hoy</span></div>
-    <div id="ganttScroll" style="overflow-x:auto;border:1px solid var(--border);border-radius:12px">
+    <div style="overflow-x:auto;border:1px solid var(--border);border-radius:12px">
       <table style="border-collapse:collapse;font-family:inherit">
         <thead>
           <tr>
@@ -895,15 +786,6 @@ function renderGanttEquipo(){
         <tbody>${rows}</tbody>
       </table>
     </div>`;
-  // Centrar en hoy
-  const todayOffset=dias.findIndex(d=>d.esHoy);
-  if(todayOffset>=0){
-    const scroll=document.getElementById("ganttScroll");
-    if(scroll){
-      const offsetPx=200+todayOffset*colW; // 200px = ancho col proyecto
-      scroll.scrollLeft=Math.max(0,offsetPx-scroll.clientWidth/2);
-    }
-  }
 }
 </script>
 </body>
