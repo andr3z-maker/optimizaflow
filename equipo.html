@@ -590,7 +590,7 @@ async function doLogin(){
   if(!email||!pass){err.textContent="Completá email y contraseña.";err.style.display="block";return;}
   const btn=document.getElementById("btnLogin");
   btn.textContent="Ingresando…";btn.disabled=true;
-  try{const d=await jsonpGet();if(d&&d.nextId!==undefined)allData=d;}catch(e){}
+  try{const d=await jsonpCall("&action=load");if(d&&d.nextId!==undefined)allData=d;}catch(e){}
   const hash=await hashPass(pass);
   const user=(allData.usuarios||[]).find(u=>u.email===email&&u.password===hash);
   btn.textContent="Ingresar";btn.disabled=false;
