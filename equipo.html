@@ -525,24 +525,19 @@ async function doSendRecoveryCode(){
   const code=String(Math.floor(100000+Math.random()*900000));
   const expiry=new Date(Date.now()+15*60*1000).toISOString();
   allData.usuarios=(allData.usuarios||[]).map(u=>u.id===user.id?{...u,resetCode:code,resetExpiry:expiry}:u);
-  try{
-    await saveMeta();
-    // Enviar email con el código
-    await sendEmail({
-      tipo:"resetPassword",
-      emailSolicitante:user.email,
-      solicitante:user.nombre,
-      titulo:code,          // reutilizamos "titulo" para pasar el código al Apps Script
-      nuevoEstado:"resetPassword"
-    });
-    recoveryUserId=user.id;
-    document.getElementById("recoveryCodeHint").innerHTML=
-      `Enviamos un código de 6 dígitos a <strong style="color:var(--text)">${email}</strong>.<br>Válido por 15 minutos.`;
-    switchTab("recoveryCode");
-  }catch(e){
-    err.textContent="Error al enviar el código. Intentá de nuevo.";err.style.display="block";
-    err.style.color="#ef4444";err.style.background="#ef444412";err.style.borderColor="#ef444430";
-  }
+  // Fire-and-forget: el Sheet guarda correctamente aunque el JSONP no devuelva respuesta
+  saveMeta().catch(()=>{});
+  sendEmail({
+    tipo:"resetPassword",
+    emailSolicitante:user.email,
+    solicitante:user.nombre,
+    titulo:code,
+    nuevoEstado:"resetPassword"
+  }).catch(()=>{});
+  recoveryUserId=user.id;
+  document.getElementById("recoveryCodeHint").innerHTML=
+    `Enviamos un código de 6 dígitos a <strong style="color:var(--text)">${email}</strong>.<br>Válido por 15 minutos.`;
+  switchTab("recoveryCode");
 }
 
 async function doVerifyCode(){
@@ -577,21 +572,15 @@ async function doResetPassword(){
     const {resetCode:_rc,resetExpiry:_re,...rest}=u; // limpiar el código usado
     return {...rest,password:hash};
   });
-  try{
-    await saveMeta();
-    recoveryUserId=null;
-    // Mostrar éxito y redirigir al login
-    document.getElementById("recoveryNewErr").textContent="✓ Contraseña actualizada. Podés iniciar sesión.";
-    document.getElementById("recoveryNewErr").style.display="block";
-    document.getElementById("recoveryNewErr").style.color="#10b981";
-    document.getElementById("recoveryNewErr").style.background="#10b98112";
-    document.getElementById("recoveryNewErr").style.borderColor="#10b98130";
-    btn.textContent="Guardar nueva contraseña";btn.disabled=false;
-    setTimeout(()=>switchTab("login"),2200);
-  }catch(e){
-    err.textContent="Error al guardar. Intentá de nuevo.";err.style.display="block";
-    btn.textContent="Guardar nueva contraseña";btn.disabled=false;
-  }
+  saveMeta().catch(()=>{});
+  recoveryUserId=null;
+  document.getElementById("recoveryNewErr").textContent="✓ Contraseña actualizada. Podés iniciar sesión.";
+  document.getElementById("recoveryNewErr").style.display="block";
+  document.getElementById("recoveryNewErr").style.color="#10b981";
+  document.getElementById("recoveryNewErr").style.background="#10b98112";
+  document.getElementById("recoveryNewErr").style.borderColor="#10b98130";
+  btn.textContent="Guardar nueva contraseña";btn.disabled=false;
+  setTimeout(()=>switchTab("login"),2200);
 }
 
 async function doLogin(){
