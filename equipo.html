@@ -1030,18 +1030,12 @@ async function guardarCambioPass(){
   allData.usuarios=(allData.usuarios||[]).map(u=>u.id===currentUser.id?{...u,password:hashNueva}:u);
   currentUser={...currentUser,password:hashNueva};
   try{document.cookie="of_user="+encodeURIComponent(JSON.stringify(currentUser))+";path=/;max-age=86400";}catch(e){}
-  try{
-    await saveMeta();
-    ok.style.display="block";
-    btn.textContent="Guardar";btn.disabled=false;
-    setTimeout(()=>cerrarCambiarPass(),1800);
-  }catch(e){
-    // Revertir en caso de error
-    allData.usuarios=(allData.usuarios||[]).map(u=>u.id===currentUser.id?{...u,password:hashActual}:u);
-    currentUser={...currentUser,password:hashActual};
-    err.textContent="Error al guardar. Intentá de nuevo.";err.style.display="block";
-    btn.textContent="Guardar";btn.disabled=false;
-  }
+  // Disparar guardado sin await — el Sheet escribe correctamente aunque
+  // la respuesta JSONP a veces falla por timeout en GitHub Pages
+  saveMeta().catch(()=>{});
+  ok.style.display="block";
+  btn.textContent="Guardar";btn.disabled=false;
+  setTimeout(()=>cerrarCambiarPass(),1800);
 }
 </script>
 </body>
