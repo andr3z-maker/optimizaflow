@@ -157,8 +157,73 @@ select.inp-sm{background:var(--bg3);border:1px solid var(--border);border-radius
         <div id="loginErr" class="err-box"></div>
         <button class="btn-primary" id="btnLogin" onclick="doLogin()">Ingresar</button>
       </div>
-      <div style="text-align:center;margin-top:18px;font-size:13px;color:var(--text4)">
+      <div style="text-align:center;margin-top:14px;font-size:13px;color:var(--text4)">
+        <button class="btn-link" onclick="switchTab('recovery')" style="color:var(--text3)">¿Olvidaste tu contraseña?</button>
+      </div>
+      <div style="text-align:center;margin-top:10px;font-size:13px;color:var(--text4)">
         ¿No tenés cuenta? <button class="btn-link" onclick="switchTab('register')">Registrate</button>
+      </div>
+    </div>
+
+    <!-- RECOVERY STEP 1: ingresar email -->
+    <div id="panelRecovery" style="display:none">
+      <div style="text-align:center;margin-bottom:22px">
+        <div style="font-size:36px;margin-bottom:10px">🔑</div>
+        <div style="font-size:16px;font-weight:700;color:var(--text)">Recuperar contraseña</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:6px;line-height:1.6">
+          Ingresá tu email y te enviaremos un código de verificación.
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div><label class="lbl">Email</label>
+          <input id="recoveryEmail" class="inp" type="email" placeholder="tu@email.com"
+            onkeydown="if(event.key==='Enter')doSendRecoveryCode()"/></div>
+        <div id="recoveryErr" class="err-box"></div>
+        <button class="btn-primary" id="btnSendCode" onclick="doSendRecoveryCode()">Enviar código</button>
+      </div>
+      <div style="text-align:center;margin-top:16px">
+        <button class="btn-link" onclick="switchTab('login')" style="font-size:13px;color:var(--text3)">← Volver al login</button>
+      </div>
+    </div>
+
+    <!-- RECOVERY STEP 2: verificar código -->
+    <div id="panelRecoveryCode" style="display:none">
+      <div style="text-align:center;margin-bottom:22px">
+        <div style="font-size:36px;margin-bottom:10px">📬</div>
+        <div style="font-size:16px;font-weight:700;color:var(--text)">Revisá tu casilla</div>
+        <div id="recoveryCodeHint" style="font-size:12px;color:var(--text3);margin-top:6px;line-height:1.6"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div><label class="lbl">Código de 6 dígitos</label>
+          <input id="recoveryCode" class="inp" type="text" inputmode="numeric" maxlength="6"
+            placeholder="______" style="text-align:center;letter-spacing:8px;font-size:22px;font-weight:700"
+            oninput="this.value=this.value.replace(/\D/g,'')"
+            onkeydown="if(event.key==='Enter')doVerifyCode()"/></div>
+        <div id="recoveryCodeErr" class="err-box"></div>
+        <button class="btn-primary" id="btnVerifyCode" onclick="doVerifyCode()">Verificar código</button>
+      </div>
+      <div style="text-align:center;margin-top:16px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <button class="btn-link" onclick="switchTab('recovery')" style="font-size:12px;color:var(--text3)">Reenviar código</button>
+        <span style="color:var(--text4);font-size:12px">·</span>
+        <button class="btn-link" onclick="switchTab('login')" style="font-size:12px;color:var(--text3)">← Volver al login</button>
+      </div>
+    </div>
+
+    <!-- RECOVERY STEP 3: nueva contraseña -->
+    <div id="panelRecoveryNew" style="display:none">
+      <div style="text-align:center;margin-bottom:22px">
+        <div style="font-size:36px;margin-bottom:10px">🔒</div>
+        <div style="font-size:16px;font-weight:700;color:var(--text)">Nueva contraseña</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:6px">Elegí una contraseña segura para tu cuenta.</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div><label class="lbl">Nueva contraseña</label>
+          <input id="recoveryNewPass" class="inp" type="password" placeholder="Mínimo 6 caracteres"/></div>
+        <div><label class="lbl">Confirmar contraseña</label>
+          <input id="recoveryNewPass2" class="inp" type="password" placeholder="Repetí la contraseña"
+            onkeydown="if(event.key==='Enter')doResetPassword()"/></div>
+        <div id="recoveryNewErr" class="err-box"></div>
+        <button class="btn-primary" id="btnResetPass" onclick="doResetPassword()">Guardar nueva contraseña</button>
       </div>
     </div>
 
@@ -376,13 +441,126 @@ async function hashPass(p){
 }
 
 function switchTab(tab){
-  document.getElementById("panelLogin").style.display   =tab==="login"   ?"block":"none";
-  document.getElementById("panelRegister").style.display=tab==="register"?"block":"none";
-  document.getElementById("panelPending").style.display ="none";
+  const panels=["panelLogin","panelRegister","panelPending","panelRecovery","panelRecoveryCode","panelRecoveryNew"];
+  panels.forEach(id=>{const el=document.getElementById(id);if(el)el.style.display="none";});
   document.getElementById("tabLogin").className   ="auth-tab"+(tab==="login"   ?" active":"");
   document.getElementById("tabRegister").className="auth-tab"+(tab==="register"?" active":"");
   document.getElementById("loginErr").style.display="none";
   document.getElementById("regErr").style.display="none";
+  if(tab==="login")     {document.getElementById("panelLogin").style.display="block";}
+  else if(tab==="register"){document.getElementById("panelRegister").style.display="block";}
+  else if(tab==="pending"){document.getElementById("panelPending").style.display="block";}
+  else if(tab==="recovery"){
+    document.getElementById("panelRecovery").style.display="block";
+    document.getElementById("recoveryErr").style.display="none";
+    document.getElementById("recoveryEmail").value="";
+  } else if(tab==="recoveryCode"){
+    document.getElementById("panelRecoveryCode").style.display="block";
+    document.getElementById("recoveryCodeErr").style.display="none";
+    document.getElementById("recoveryCode").value="";
+  } else if(tab==="recoveryNew"){
+    document.getElementById("panelRecoveryNew").style.display="block";
+    document.getElementById("recoveryNewErr").style.display="none";
+    document.getElementById("recoveryNewPass").value="";
+    document.getElementById("recoveryNewPass2").value="";
+  }
+}
+
+// ── RECUPERACIÓN DE CONTRASEÑA ───────────────────────────────────────────────
+let recoveryUserId=null; // id del usuario que está recuperando
+
+function sendEmail(emailData){
+  return jsonpCall("&action=sendemail&emailData="+encodeURIComponent(JSON.stringify(emailData)));
+}
+
+async function doSendRecoveryCode(){
+  const email=document.getElementById("recoveryEmail").value.trim().toLowerCase();
+  const err=document.getElementById("recoveryErr");
+  if(!email){err.textContent="Ingresá tu email.";err.style.display="block";return;}
+  const btn=document.getElementById("btnSendCode");
+  btn.textContent="Enviando…";btn.disabled=true;
+  err.style.display="none";
+  // Cargar datos frescos
+  try{const d=await jsonpCall("&action=load");if(d&&d.nextId!==undefined)allData=d;}catch(e){}
+  const user=(allData.usuarios||[]).find(u=>u.email===email&&u.estado==="aprobado");
+  btn.textContent="Enviar código";btn.disabled=false;
+  if(!user){
+    // Respuesta genérica para no revelar si el email existe
+    err.textContent="Si el email existe y está activo, recibirás el código en breve.";
+    err.style.display="block";err.style.color="#10b981";err.style.background="#10b98112";err.style.borderColor="#10b98130";
+    return;
+  }
+  // Generar código de 6 dígitos y guardarlo con expiración de 15 min
+  const code=String(Math.floor(100000+Math.random()*900000));
+  const expiry=new Date(Date.now()+15*60*1000).toISOString();
+  allData.usuarios=(allData.usuarios||[]).map(u=>u.id===user.id?{...u,resetCode:code,resetExpiry:expiry}:u);
+  try{
+    await saveMeta();
+    // Enviar email con el código
+    await sendEmail({
+      tipo:"resetPassword",
+      emailSolicitante:user.email,
+      solicitante:user.nombre,
+      titulo:code,          // reutilizamos "titulo" para pasar el código al Apps Script
+      nuevoEstado:"resetPassword"
+    });
+    recoveryUserId=user.id;
+    document.getElementById("recoveryCodeHint").innerHTML=
+      `Enviamos un código de 6 dígitos a <strong style="color:var(--text)">${email}</strong>.<br>Válido por 15 minutos.`;
+    switchTab("recoveryCode");
+  }catch(e){
+    err.textContent="Error al enviar el código. Intentá de nuevo.";err.style.display="block";
+    err.style.color="#ef4444";err.style.background="#ef444412";err.style.borderColor="#ef444430";
+  }
+}
+
+async function doVerifyCode(){
+  const code=document.getElementById("recoveryCode").value.trim();
+  const err=document.getElementById("recoveryCodeErr");
+  if(code.length!==6){err.textContent="Ingresá los 6 dígitos del código.";err.style.display="block";return;}
+  const btn=document.getElementById("btnVerifyCode");
+  btn.textContent="Verificando…";btn.disabled=true;
+  err.style.display="none";
+  // Refrescar datos para tener el código más reciente
+  try{const d=await jsonpCall("&action=load");if(d&&d.nextId!==undefined)allData=d;}catch(e){}
+  const user=(allData.usuarios||[]).find(u=>u.id===recoveryUserId);
+  btn.textContent="Verificar código";btn.disabled=false;
+  if(!user||!user.resetCode){err.textContent="Sesión expirada. Solicitá un nuevo código.";err.style.display="block";return;}
+  if(new Date()>new Date(user.resetExpiry)){err.textContent="El código expiró. Solicitá uno nuevo.";err.style.display="block";return;}
+  if(user.resetCode!==code){err.textContent="Código incorrecto. Verificá y volvé a intentar.";err.style.display="block";return;}
+  switchTab("recoveryNew");
+}
+
+async function doResetPassword(){
+  const pass =document.getElementById("recoveryNewPass").value;
+  const pass2=document.getElementById("recoveryNewPass2").value;
+  const err  =document.getElementById("recoveryNewErr");
+  if(pass.length<6){err.textContent="La contraseña debe tener al menos 6 caracteres.";err.style.display="block";return;}
+  if(pass!==pass2){err.textContent="Las contraseñas no coinciden.";err.style.display="block";return;}
+  const btn=document.getElementById("btnResetPass");
+  btn.textContent="Guardando…";btn.disabled=true;
+  err.style.display="none";
+  const hash=await hashPass(pass);
+  allData.usuarios=(allData.usuarios||[]).map(u=>{
+    if(u.id!==recoveryUserId) return u;
+    const {resetCode:_rc,resetExpiry:_re,...rest}=u; // limpiar el código usado
+    return {...rest,password:hash};
+  });
+  try{
+    await saveMeta();
+    recoveryUserId=null;
+    // Mostrar éxito y redirigir al login
+    document.getElementById("recoveryNewErr").textContent="✓ Contraseña actualizada. Podés iniciar sesión.";
+    document.getElementById("recoveryNewErr").style.display="block";
+    document.getElementById("recoveryNewErr").style.color="#10b981";
+    document.getElementById("recoveryNewErr").style.background="#10b98112";
+    document.getElementById("recoveryNewErr").style.borderColor="#10b98130";
+    btn.textContent="Guardar nueva contraseña";btn.disabled=false;
+    setTimeout(()=>switchTab("login"),2200);
+  }catch(e){
+    err.textContent="Error al guardar. Intentá de nuevo.";err.style.display="block";
+    btn.textContent="Guardar nueva contraseña";btn.disabled=false;
+  }
 }
 
 async function doLogin(){
@@ -398,9 +576,7 @@ async function doLogin(){
   btn.textContent="Ingresar";btn.disabled=false;
   if(!user){err.textContent="Email o contraseña incorrectos.";err.style.display="block";return;}
   if(user.estado==="pendiente"){
-    document.getElementById("panelLogin").style.display="none";
-    document.getElementById("panelPending").style.display="block";
-    document.getElementById("tabLogin").className="auth-tab";
+    switchTab("pending");
     return;
   }
   if(user.estado==="rechazado"){err.textContent="Tu acceso fue rechazado. Contactá al administrador.";err.style.display="block";return;}
