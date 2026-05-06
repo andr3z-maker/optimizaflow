@@ -283,6 +283,7 @@ select.inp-sm{background:var(--bg3);border:1px solid var(--border);border-radius
           <div class="user-avatar" id="userAvatar"></div>
           <span style="font-size:12px;font-weight:600;color:var(--text2)" id="userName"></span>
         </div>
+        <button class="btn-ghost" onclick="abrirCambiarPass()" title="Cambiar contraseña">🔑</button>
         <button class="btn-ghost" onclick="doLogout()">Salir</button>
         <button class="btn-theme" id="btnTheme" onclick="toggleTheme()" title="Cambiar tema">🌙</button>
         <button class="btn-sm" onclick="abrirModal()"><span style="font-size:16px">+</span> Nueva solicitud</button>
@@ -369,6 +370,36 @@ select.inp-sm{background:var(--bg3);border:1px solid var(--border);border-radius
 <!-- Modal detalle -->
 <div class="overlay" id="detalleOverlay" style="display:none">
   <div class="modal" id="detalleContent"></div>
+</div>
+
+<!-- Modal cambiar contraseña -->
+<div class="overlay" id="passOverlay" style="display:none" onclick="if(event.target===this)cerrarCambiarPass()">
+  <div class="modal" style="max-width:420px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+      <div>
+        <div style="font-size:18px;font-weight:700;color:var(--text)">Cambiar contraseña</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:3px" id="passUserLabel"></div>
+      </div>
+      <button style="background:none;border:none;color:#475569;cursor:pointer;font-size:22px" onclick="cerrarCambiarPass()">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div><label class="lbl">Contraseña actual</label>
+        <input id="passActual" class="inp" type="password" placeholder="••••••••"/></div>
+      <div><label class="lbl">Nueva contraseña</label>
+        <input id="passNueva" class="inp" type="password" placeholder="Mínimo 6 caracteres"/></div>
+      <div><label class="lbl">Confirmar nueva contraseña</label>
+        <input id="passNueva2" class="inp" type="password" placeholder="Repetí la nueva contraseña"
+          onkeydown="if(event.key==='Enter')guardarCambioPass()"/></div>
+      <div id="passErr" class="err-box"></div>
+      <div id="passOk" style="color:#10b981;font-size:13px;background:#10b98112;border:1px solid #10b98130;border-radius:7px;padding:9px 14px;display:none">✓ Contraseña actualizada correctamente</div>
+      <div style="display:flex;gap:12px;justify-content:flex-end">
+        <button class="btn-outline" style="width:auto;padding:10px 24px" onclick="cerrarCambiarPass()">Cancelar</button>
+        <button id="btnGuardarPass" onclick="guardarCambioPass()" style="padding:10px 28px;border-radius:8px;border:none;
+          background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;cursor:pointer;font-size:14px;font-weight:700;font-family:inherit">
+          Guardar</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -962,6 +993,55 @@ function renderGanttEquipo(){
         <tbody>${rows}</tbody>
       </table>
     </div>`;
+}
+
+// ── CAMBIAR CONTRASEÑA ────────────────────────────────────────────────────────
+function abrirCambiarPass(){
+  document.getElementById("passActual").value="";
+  document.getElementById("passNueva").value="";
+  document.getElementById("passNueva2").value="";
+  document.getElementById("passErr").style.display="none";
+  document.getElementById("passOk").style.display="none";
+  document.getElementById("passUserLabel").textContent=currentUser.email;
+  document.getElementById("passOverlay").style.display="flex";
+}
+function cerrarCambiarPass(){
+  document.getElementById("passOverlay").style.display="none";
+}
+async function guardarCambioPass(){
+  const actual =document.getElementById("passActual").value;
+  const nueva  =document.getElementById("passNueva").value;
+  const nueva2 =document.getElementById("passNueva2").value;
+  const err    =document.getElementById("passErr");
+  const ok     =document.getElementById("passOk");
+  err.style.display="none";ok.style.display="none";
+  if(!actual||!nueva||!nueva2){err.textContent="Completá todos los campos.";err.style.display="block";return;}
+  if(nueva.length<6){err.textContent="La nueva contraseña debe tener al menos 6 caracteres.";err.style.display="block";return;}
+  if(nueva!==nueva2){err.textContent="Las contraseñas nuevas no coinciden.";err.style.display="block";return;}
+  const btn=document.getElementById("btnGuardarPass");
+  btn.textContent="Guardando…";btn.disabled=true;
+  // Verificar contraseña actual
+  const hashActual=await hashPass(actual);
+  if(hashActual!==currentUser.password){
+    err.textContent="La contraseña actual es incorrecta.";err.style.display="block";
+    btn.textContent="Guardar";btn.disabled=false;return;
+  }
+  const hashNueva=await hashPass(nueva);
+  allData.usuarios=(allData.usuarios||[]).map(u=>u.id===currentUser.id?{...u,password:hashNueva}:u);
+  currentUser={...currentUser,password:hashNueva};
+  try{document.cookie="of_user="+encodeURIComponent(JSON.stringify(currentUser))+";path=/;max-age=86400";}catch(e){}
+  try{
+    await saveMeta();
+    ok.style.display="block";
+    btn.textContent="Guardar";btn.disabled=false;
+    setTimeout(()=>cerrarCambiarPass(),1800);
+  }catch(e){
+    // Revertir en caso de error
+    allData.usuarios=(allData.usuarios||[]).map(u=>u.id===currentUser.id?{...u,password:hashActual}:u);
+    currentUser={...currentUser,password:hashActual};
+    err.textContent="Error al guardar. Intentá de nuevo.";err.style.display="block";
+    btn.textContent="Guardar";btn.disabled=false;
+  }
 }
 </script>
 </body>
