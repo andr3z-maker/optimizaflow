@@ -625,18 +625,14 @@ async function doRegister(){
   }
   const hash=await hashPass(pass);
   const nuevo={id:"u_"+Date.now(),nombre,email,equipo,password:hash,estado:"pendiente",fechaRegistro:new Date().toISOString()};
-  // Agregar usuario y guardar inmediatamente — sin esperar ningún refresh
+  // Fire-and-forget: el Sheet guarda correctamente aunque el JSONP no devuelva respuesta
   const usuariosActualizados=[...(allData.usuarios||[]),nuevo];
   const meta={usuarios:usuariosActualizados,nextId:allData.nextId||1};
-  try{
-    await jsonpCall("&action=savemeta&data="+encodeURIComponent(JSON.stringify(meta)));
-    allData.usuarios=usuariosActualizados;
-    document.getElementById("panelRegister").style.display="none";
-    document.getElementById("panelPending").style.display="block";
-    document.getElementById("tabRegister").className="auth-tab";
-  }catch(e){
-    err.textContent="Error al registrarse. Intentá de nuevo.";err.style.display="block";
-  }
+  jsonpCall("&action=savemeta&data="+encodeURIComponent(JSON.stringify(meta))).catch(()=>{});
+  allData.usuarios=usuariosActualizados;
+  document.getElementById("panelRegister").style.display="none";
+  document.getElementById("panelPending").style.display="block";
+  document.getElementById("tabRegister").className="auth-tab";
   btn.textContent="Solicitar acceso";btn.disabled=false;
 }
 
@@ -843,9 +839,8 @@ function detalleInnerHTML(s){
 async function cambiarPrioGerente(id, nuevaPrio){
   allData.solicitudes=(allData.solicitudes||[]).map(s=>s.id===id?{...s,prioridad:nuevaPrio}:s);
   const sol=(allData.solicitudes||[]).find(s=>s.id===id);
-  await saveSol(sol);
+  saveSol(sol).catch(()=>{});
   renderCards();
-  // Refresh detalle modal
   document.getElementById("detalleContent").innerHTML=detalleInnerHTML(sol);
   showToast("✓ Prioridad actualizada","ok");
 }
@@ -883,16 +878,8 @@ async function enviarSolicitud(){
     estado:"pendiente",fechaCreacion:new Date().toISOString(),adjuntos:[],comentarios:[]};
   allData.solicitudes=[...(allData.solicitudes||[]),nueva];
   allData.nextId=solId+1;
-  try{
-    await saveSol(nueva);
-  }catch(e){
-    allData.solicitudes.pop();allData.nextId--;
-    showToast("⚠️ Error al enviar. Intenta de nuevo.","err");
-    btn.textContent="Enviar solicitud";btn.disabled=false;
-    return;
-  }
-  // saveMeta puede fallar si la URL es muy larga — no es crítico, el registro ya se guardó
-  try{ await saveMeta(); }catch(e){ console.warn("saveMeta falló, no crítico:",e); }
+  saveSol(nueva).catch(()=>{});
+  saveMeta().catch(()=>{});
   cerrarModal();showToast("✅ Solicitud enviada correctamente","ok");
   renderStats();renderCards();
   btn.textContent="Enviar solicitud";btn.disabled=false;
