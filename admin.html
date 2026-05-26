@@ -688,9 +688,9 @@ function cardHTML(s){
     }
   }
 
-  const enProduccion=s.estado==="produccion";
-  const btnGestionar=enProduccion
-    ? `<button class="btn-gestionar" disabled style="opacity:0.35;cursor:not-allowed">✓ Listo</button>`
+  const estadoFinal=s.estado==="produccion"||s.estado==="rechazado";
+  const btnGestionar=estadoFinal
+    ? `<button class="btn-gestionar" onclick="event.stopPropagation();abrirAdmin(${s.id})" style="opacity:0.75" title="Editar UG / comentarios">✎ UG</button>`
     : `<button class="btn-gestionar" onclick="event.stopPropagation();abrirAdmin(${s.id})">Gestionar</button>`;
 
   return `<div class="card" style="border-left:3px solid ${stage.color};cursor:pointer" onclick="verDetalle(${s.id})"
@@ -758,9 +758,9 @@ function renderLista(sol){
       if(entroDesarrollo&&entroProduccion)
         diasCiclo=Math.round((new Date(entroProduccion.desde)-new Date(entroDesarrollo.desde))/(1000*60*60*24));
     }
-    const enProduccion=s.estado==="produccion";
-    const btnGestionar=enProduccion
-      ? `<button class="btn-gestionar" disabled style="opacity:0.35;cursor:not-allowed">✓ Listo</button>`
+    const estadoFinal=s.estado==="produccion"||s.estado==="rechazado";
+    const btnGestionar=estadoFinal
+      ? `<button class="btn-gestionar" onclick="event.stopPropagation();abrirAdmin(${s.id})" style="opacity:0.75" title="Editar UG / comentarios">✎ UG</button>`
       : `<button class="btn-gestionar" onclick="event.stopPropagation();abrirAdmin(${s.id})">Gestionar</button>`;
     return `<div class="lista-row">
       <div>
@@ -798,6 +798,7 @@ async function abrirAdmin(id){
 }
 function renderAdminModal(){
   const s=modalSol;
+  const estadoFinal=s.estado==="produccion"||s.estado==="rechazado";
   const fecha=new Date(s.fechaCreacion).toLocaleDateString("es-AR",{day:"2-digit",month:"long",year:"numeric",hour:"2-digit",minute:"2-digit"});
   document.getElementById("adminModal").innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
@@ -809,19 +810,28 @@ function renderAdminModal(){
       <button style="background:none;border:none;color:#475569;cursor:pointer;font-size:22px" onclick="document.getElementById('adminOverlay').style.display='none'">✕</button>
     </div>
     ${s.descripcion?`<div style="background:var(--bg2);border:1px solid #0f172a;border-radius:8px;padding:12px 14px;margin-bottom:20px;font-size:13px;color:#64748b;line-height:1.6">${s.descripcion}</div>`:""}
+    ${estadoFinal?`<div style="background:#f59e0b12;border:1px solid #f59e0b30;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#f59e0b">
+      ⚠️ Solicitud en estado <strong>${s.estado==="produccion"?"Producción":"Rechazado"}</strong> — solo podés modificar la UG y agregar comentarios.
+    </div>`:""}
     <div style="display:flex;flex-direction:column;gap:20px">
-      <div><label class="lbl">Cambiar estado</label>
-        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px" id="stageGrid"></div></div>
-      <div><label class="lbl">Cambiar prioridad</label>
-        <div style="display:flex;gap:8px" id="prioGrid"></div></div>
-      <div><label class="lbl">Sector solicitante</label>
-        <select id="adminEquipo" class="inp" style="cursor:pointer">
+      <div style="${estadoFinal?"opacity:0.4;pointer-events:none;user-select:none":""}">
+        <label class="lbl">Cambiar estado</label>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px" id="stageGrid"></div>
+      </div>
+      <div style="${estadoFinal?"opacity:0.4;pointer-events:none;user-select:none":""}">
+        <label class="lbl">Cambiar prioridad</label>
+        <div style="display:flex;gap:8px" id="prioGrid"></div>
+      </div>
+      <div style="${estadoFinal?"opacity:0.4;pointer-events:none;user-select:none":""}">
+        <label class="lbl">Sector solicitante</label>
+        <select id="adminEquipo" class="inp" style="cursor:pointer" ${estadoFinal?"disabled":""}>
           <option value="Almacenes y Logística">Almacenes y Logística</option>
           <option value="Gestión de Materiales">Gestión de Materiales</option>
           <option value="Logística y Transporte">Logística y Transporte</option>
           <option value="Venta de Materiales">Venta de Materiales</option>
           <option value="Catalogación">Catalogación</option>
-        </select></div>
+        </select>
+      </div>
       <div style="position:relative">
         <label class="lbl">Unidad(es) de Gestión</label>
         <button type="button" class="ug-trigger" id="adminUGTrigger" onclick="toggleUGDropdown('adminUGDropdown','adminUGTrigger','adminUGHidden')">
@@ -843,11 +853,11 @@ function renderAdminModal(){
       ${s.comentarios?.length?`<div><label class="lbl">Comentarios anteriores</label><div style="display:flex;flex-direction:column;gap:8px">${s.comentarios.map(c=>`<div class="comment-box"><div style="font-size:11px;color:#6366f1;font-weight:700;margin-bottom:4px">${new Date(c.fecha).toLocaleDateString("es-AR",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"})}</div><div style="font-size:13px;color:#94a3b8;line-height:1.5">${c.texto}</div></div>`).join("")}</div></div>`:""}
       <div><label class="lbl">Agregar comentario</label>
         <textarea id="nuevoComentario" class="inp" placeholder="Actualizaciones, próximos pasos…"></textarea></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div style="${estadoFinal?"opacity:0.4;pointer-events:none;user-select:none":""}; display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div><label class="lbl">Fecha inicio estimada</label>
-          <input type="date" id="fechaInicioEstimada" class="inp" value="${s.fechaInicioEstimada||''}"/></div>
+          <input type="date" id="fechaInicioEstimada" class="inp" value="${s.fechaInicioEstimada||''}" ${estadoFinal?"disabled":""}/></div>
         <div><label class="lbl">Días estimados</label>
-          <input type="number" id="diasEstimados" class="inp" min="1" placeholder="Ej: 14" value="${s.diasEstimados||''}"/></div>
+          <input type="number" id="diasEstimados" class="inp" min="1" placeholder="Ej: 14" value="${s.diasEstimados||''}" ${estadoFinal?"disabled":""}/></div>
       </div>
     </div>
     <div style="display:flex;gap:12px;margin-top:28px;justify-content:flex-end">
@@ -890,13 +900,17 @@ async function guardarAdmin(){
   allData.solicitudes=(allData.solicitudes||[]).map(s=>{
     if(s.id!==modalSol.id)return s;
     estadoAnterior=s.estado;
+    const estadoFinal=s.estado==="produccion"||s.estado==="rechazado";
     const ugRaw=document.getElementById('adminUGHidden')?.value||"";
     const unidadesGestion=ugRaw?ugRaw.split(",").filter(Boolean):s.unidadesGestion||[];
-    const u={...s,estado:modalEstado,prioridad:modalPrio,equipo:document.getElementById('adminEquipo').value,
-      unidadesGestion,
-      fechaInicioEstimada:document.getElementById('fechaInicioEstimada')?.value||s.fechaInicioEstimada||null,
-      diasEstimados:parseInt(document.getElementById('diasEstimados')?.value)||s.diasEstimados||null};
-    if(modalEstado!==s.estado){
+    // Si está en producción/rechazado, preservar estado, prioridad, sector y fechas — solo se actualiza UG y comentarios
+    const u=estadoFinal
+      ? {...s, unidadesGestion}
+      : {...s,estado:modalEstado,prioridad:modalPrio,equipo:document.getElementById('adminEquipo').value,
+          unidadesGestion,
+          fechaInicioEstimada:document.getElementById('fechaInicioEstimada')?.value||s.fechaInicioEstimada||null,
+          diasEstimados:parseInt(document.getElementById('diasEstimados')?.value)||s.diasEstimados||null};
+    if(!estadoFinal && modalEstado!==s.estado){
       const hist=[...(s.historialEstados||[{estado:s.estado,desde:s.fechaCreacion}])];
       hist.push({estado:modalEstado,desde:new Date().toISOString()});
       u.historialEstados=hist;
@@ -1043,7 +1057,7 @@ function verDetalle(id){
     ${histHTML}
     ${comentHTML}
     <div style="display:flex;justify-content:flex-end;margin-top:20px;gap:10px">
-      ${s.estado!=="produccion"?`<button onclick="document.getElementById('detalleOverlay').style.display='none';abrirAdmin(${s.id})" style="padding:10px 24px;border-radius:8px;border:none;background:linear-gradient(135deg,#ef4444,#f59e0b);color:white;cursor:pointer;font-size:14px;font-weight:700;font-family:inherit">Gestionar</button>`:""}
+      <button onclick="document.getElementById('detalleOverlay').style.display='none';abrirAdmin(${s.id})" style="padding:10px 24px;border-radius:8px;border:none;background:linear-gradient(135deg,#ef4444,#f59e0b);color:white;cursor:pointer;font-size:14px;font-weight:700;font-family:inherit">${(s.estado==="produccion"||s.estado==="rechazado")?"✎ Editar UG":"Gestionar"}</button>
       <button onclick="document.getElementById('detalleOverlay').style.display='none'" style="padding:10px 24px;border-radius:8px;border:1px solid var(--border);background:transparent;color:#94a3b8;cursor:pointer;font-size:14px;font-weight:600;font-family:inherit">Cerrar</button>
     </div>`;
   document.getElementById("detalleOverlay").style.display="flex";
