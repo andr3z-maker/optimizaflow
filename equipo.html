@@ -490,10 +490,15 @@ function jsonpCall(extra=""){
 }
 function jsonpGet(){ return jsonpCall(); }
 
-// Guarda meta (usuarios + nextId)
+// Guarda meta (usuarios + nextId) — usa POST para evitar límite de URL con muchos usuarios
 function saveMeta(){
   const meta={usuarios:allData.usuarios||[],nextId:allData.nextId||1};
-  return jsonpCall("&action=savemeta&data="+encodeURIComponent(JSON.stringify(meta)));
+  return fetch(API,{
+    method:"POST",
+    mode:"no-cors",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({action:"savemeta",data:JSON.stringify(meta)})
+  });
 }
 // Guarda o actualiza una solicitud individual
 function saveSol(sol){
@@ -666,10 +671,15 @@ async function doRegister(){
   const nuevo={id:"u_"+Date.now(),nombre,email,equipo,password:hash,estado:"pendiente",fechaRegistro:new Date().toISOString()};
   const usuariosActualizados=[...(allData.usuarios||[]),nuevo];
   allData.usuarios=usuariosActualizados;
-  // Esperar que el Sheet confirme el guardado antes de enviar el email
+  // Esperar que el Sheet confirme el guardado antes de enviar el email (POST evita límite de URL)
   try{
     const meta={usuarios:usuariosActualizados,nextId:allData.nextId||1};
-    await jsonpCall("&action=savemeta&data="+encodeURIComponent(JSON.stringify(meta)));
+    await fetch(API,{
+      method:"POST",
+      mode:"no-cors",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({action:"savemeta",data:JSON.stringify(meta)})
+    });
   }catch(e){}
   // Notificar al admin sobre el nuevo registro pendiente de aprobación
   sendEmail({
