@@ -664,11 +664,13 @@ async function doRegister(){
   }
   const hash=await hashPass(pass);
   const nuevo={id:"u_"+Date.now(),nombre,email,equipo,password:hash,estado:"pendiente",fechaRegistro:new Date().toISOString()};
-  // Fire-and-forget: el Sheet guarda correctamente aunque el JSONP no devuelva respuesta
   const usuariosActualizados=[...(allData.usuarios||[]),nuevo];
-  const meta={usuarios:usuariosActualizados,nextId:allData.nextId||1};
-  jsonpCall("&action=savemeta&data="+encodeURIComponent(JSON.stringify(meta))).catch(()=>{});
   allData.usuarios=usuariosActualizados;
+  // Esperar que el Sheet confirme el guardado antes de enviar el email
+  try{
+    const meta={usuarios:usuariosActualizados,nextId:allData.nextId||1};
+    await jsonpCall("&action=savemeta&data="+encodeURIComponent(JSON.stringify(meta)));
+  }catch(e){}
   // Notificar al admin sobre el nuevo registro pendiente de aprobación
   sendEmail({
     tipo:"nuevoRegistro",
