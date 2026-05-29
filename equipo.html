@@ -669,6 +669,15 @@ async function doRegister(){
   const meta={usuarios:usuariosActualizados,nextId:allData.nextId||1};
   jsonpCall("&action=savemeta&data="+encodeURIComponent(JSON.stringify(meta))).catch(()=>{});
   allData.usuarios=usuariosActualizados;
+  // Notificar al admin sobre el nuevo registro pendiente de aprobación
+  sendEmail({
+    tipo:"nuevoRegistro",
+    solicitante:nombre,
+    emailSolicitante:email,
+    equipo:equipo,
+    titulo:"Nuevo usuario pendiente de aprobación",
+    nuevoEstado:"pendiente"
+  }).catch(()=>{});
   document.getElementById("panelRegister").style.display="none";
   document.getElementById("panelPending").style.display="block";
   document.getElementById("tabRegister").className="auth-tab";
@@ -938,6 +947,15 @@ async function enviarSolicitud(){
   allData.nextId=solId+1;
   saveSol(nueva).catch(()=>{});
   saveMeta().catch(()=>{});
+  // Notificar sobre la nueva solicitud
+  sendEmail({
+    tipo:"nuevaSolicitud",
+    solicitante:currentUser.nombre,
+    emailSolicitante:currentUser.email,
+    equipo:equipo,
+    titulo:titulo,
+    nuevoEstado:"pendiente"
+  }).catch(()=>{});
   cerrarModal();showToast("✅ Solicitud enviada correctamente","ok");
   renderStats();renderCards();
   btn.textContent="Enviar solicitud";btn.disabled=false;
