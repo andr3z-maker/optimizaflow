@@ -490,15 +490,10 @@ function jsonpCall(extra=""){
 }
 function jsonpGet(){ return jsonpCall(); }
 
-// Guarda meta (usuarios + nextId) — usa POST para evitar límite de URL con muchos usuarios
+// Guarda meta (usuarios + nextId) — usa JSONP GET, igual que admin.html (método probado y funcional)
 function saveMeta(){
   const meta={usuarios:allData.usuarios||[],nextId:allData.nextId||1};
-  return fetch(API,{
-    method:"POST",
-    mode:"no-cors",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({action:"savemeta",data:JSON.stringify(meta)})
-  });
+  return jsonpCall("&action=savemeta&data="+encodeURIComponent(JSON.stringify(meta)));
 }
 // Guarda o actualiza una solicitud individual
 function saveSol(sol){
@@ -543,6 +538,8 @@ function switchTab(tab){
 
 // ── RECUPERACIÓN DE CONTRASEÑA ───────────────────────────────────────────────
 let recoveryUserId=null; // id del usuario que está recuperando
+let recoveryExpectedCode=null; // código retenido localmente (evita race condition con el Sheet)
+let recoveryExpiry=null;       // vencimiento del código retenido localmente
 
 function sendEmail(emailData){
   return jsonpCall("&action=sendemail&emailData="+encodeURIComponent(JSON.stringify(emailData)));
@@ -569,6 +566,9 @@ async function doSendRecoveryCode(){
   const code=String(Math.floor(100000+Math.random()*900000));
   const expiry=new Date(Date.now()+15*60*1000).toISOString();
   allData.usuarios=(allData.usuarios||[]).map(u=>u.id===user.id?{...u,resetCode:code,resetExpiry:expiry}:u);
+  // Retener el código localmente para validarlo sin depender de la escritura/lectura del Sheet
+  recoveryExpectedCode=code;
+  recoveryExpiry=expiry;
   // Fire-and-forget: el Sheet guarda correctamente aunque el JSONP no devuelva respuesta
   saveMeta().catch(()=>{});
   sendEmail({
@@ -588,16 +588,10 @@ async function doVerifyCode(){
   const code=document.getElementById("recoveryCode").value.trim();
   const err=document.getElementById("recoveryCodeErr");
   if(code.length!==6){err.textContent="Ingresá los 6 dígitos del código.";err.style.display="block";return;}
-  const btn=document.getElementById("btnVerifyCode");
-  btn.textContent="Verificando…";btn.disabled=true;
-  err.style.display="none";
-  // Refrescar datos para tener el código más reciente
-  try{const d=await jsonpCall("&action=load");if(d&&d.nextId!==undefined)allData=d;}catch(e){}
-  const user=(allData.usuarios||[]).find(u=>u.id===recoveryUserId);
-  btn.textContent="Verificar código";btn.disabled=false;
-  if(!user||!user.resetCode){err.textContent="Sesión expirada. Solicitá un nuevo código.";err.style.display="block";return;}
-  if(new Date()>new Date(user.resetExpiry)){err.textContent="El código expiró. Solicitá uno nuevo.";err.style.display="block";return;}
-  if(user.resetCode!==code){err.textContent="Código incorrecto. Verificá y volvé a intentar.";err.style.display="block";return;}
+  // Validar contra el código retenido localmente — sin recargar del Sheet (evita la race condition)
+  if(!recoveryExpectedCode){err.textContent="Sesión expirada. Solicitá un nuevo código.";err.style.display="block";return;}
+  if(new Date()>new Date(recoveryExpiry)){err.textContent="El código expiró. Solicitá uno nuevo.";err.style.display="block";return;}
+  if(recoveryExpectedCode!==code){err.textContent="Código incorrecto. Verificá y volvé a intentar.";err.style.display="block";return;}
   switchTab("recoveryNew");
 }
 
@@ -616,8 +610,11 @@ async function doResetPassword(){
     const {resetCode:_rc,resetExpiry:_re,...rest}=u; // limpiar el código usado
     return {...rest,password:hash};
   });
-  saveMeta().catch(()=>{});
+  // Esperar la confirmación del guardado del nuevo password antes de mandar al login
+  try{ await saveMeta(); }catch(e){}
   recoveryUserId=null;
+  recoveryExpectedCode=null;
+  recoveryExpiry=null;
   document.getElementById("recoveryNewErr").textContent="✓ Contraseña actualizada. Podés iniciar sesión.";
   document.getElementById("recoveryNewErr").style.display="block";
   document.getElementById("recoveryNewErr").style.color="#10b981";
@@ -671,15 +668,9 @@ async function doRegister(){
   const nuevo={id:"u_"+Date.now(),nombre,email,equipo,password:hash,estado:"pendiente",fechaRegistro:new Date().toISOString()};
   const usuariosActualizados=[...(allData.usuarios||[]),nuevo];
   allData.usuarios=usuariosActualizados;
-  // Esperar que el Sheet confirme el guardado antes de enviar el email (POST evita límite de URL)
+  // Esperar que el Sheet confirme el guardado antes de enviar el email (JSONP GET, igual que admin.html)
   try{
-    const meta={usuarios:usuariosActualizados,nextId:allData.nextId||1};
-    await fetch(API,{
-      method:"POST",
-      mode:"no-cors",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({action:"savemeta",data:JSON.stringify(meta)})
-    });
+    await saveMeta();
   }catch(e){}
   // Notificar al admin sobre el nuevo registro pendiente de aprobación
   sendEmail({
