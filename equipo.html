@@ -382,10 +382,22 @@ select.inp-sm{background:var(--bg3);border:1px solid var(--border);border-radius
             <span style="font-weight:700;color:var(--text)">Todas las UG</span>
           </div>
           <div style="height:1px;background:var(--border);margin:2px 0"></div>
-          ${["GSJ","NQN","REF","ACA"].map(ug=>`<div class="ug-option" onclick="toggleUGOption('${ug}','formUG','ugDropdown','ugTrigger')">
-            <input type="checkbox" id="ug-${ug}-form" value="${ug}" onclick="event.stopPropagation();toggleUGOption('${ug}','formUG','ugDropdown','ugTrigger')"/>
-            <span>${ug}</span>
-          </div>`).join("")}
+          <div class="ug-option" onclick="toggleUGOption('GSJ','formUG','ugDropdown','ugTrigger')">
+            <input type="checkbox" id="ug-GSJ-form" value="GSJ" onclick="event.stopPropagation();toggleUGOption('GSJ','formUG','ugDropdown','ugTrigger')"/>
+            <span>GSJ</span>
+          </div>
+          <div class="ug-option" onclick="toggleUGOption('NQN','formUG','ugDropdown','ugTrigger')">
+            <input type="checkbox" id="ug-NQN-form" value="NQN" onclick="event.stopPropagation();toggleUGOption('NQN','formUG','ugDropdown','ugTrigger')"/>
+            <span>NQN</span>
+          </div>
+          <div class="ug-option" onclick="toggleUGOption('REF','formUG','ugDropdown','ugTrigger')">
+            <input type="checkbox" id="ug-REF-form" value="REF" onclick="event.stopPropagation();toggleUGOption('REF','formUG','ugDropdown','ugTrigger')"/>
+            <span>REF</span>
+          </div>
+          <div class="ug-option" onclick="toggleUGOption('ACA','formUG','ugDropdown','ugTrigger')">
+            <input type="checkbox" id="ug-ACA-form" value="ACA" onclick="event.stopPropagation();toggleUGOption('ACA','formUG','ugDropdown','ugTrigger')"/>
+            <span>ACA</span>
+          </div>
         </div>
         <input type="hidden" id="formUG" value=""/>
       </div>
